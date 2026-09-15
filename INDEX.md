@@ -12,6 +12,7 @@ Entrada obrigatória: `START_HERE.md`.
 - `clients/` - memória por cliente (um arquivo por cliente).
 - `templates/` - prompts e checklists reutilizáveis.
 - `handoff/` - modelos de repasse entre agentes.
+- `mcp_server/` - pacote Python do servidor MCP que este repositório expõe de si mesmo (raiz também tem `pyproject.toml`/`tests/` — ver `docs/mcp_server.md`).
 
 ## Arquivos-ponte
 
@@ -23,4 +24,12 @@ Entrada obrigatória: `START_HERE.md`.
 
 ## Projetos e clientes registrados
 
-Nenhum ainda — use `projects/_TEMPLATE.md` e `clients/_TEMPLATE.md` para criar o primeiro.
+- `projects/moto-mcp-framework-server.md` — servidor MCP (stdio) que
+  expõe o próprio moto_mcp (regras/knowledge/agentes/projetos/clientes)
+  como tools MCP. Código na raiz do repositório (`mcp_server/`,
+  `pyproject.toml`, `tests/`) — ver `docs/mcp_server.md` para detalhes
+  técnicos. Ver o arquivo em `projects/` para decisões de arquitetura e
+  pendências.
+- `projects/moto-mcp-server.md` — **OBSOLETO**, código removido. Gateway
+  MCP do MotoOCR que chegou a ser colocado dentro deste repositório por
+  engano; removido pelo Yuri. Mantido só como registro histórico.

@@ -1,0 +1,120 @@
+# mcp_server/config.py
+#
+# REPO_ROOT é calculado por padrão a partir da posição deste arquivo no
+# disco (uma pasta acima: mcp_server/ -> raiz do moto_mcp). Este
+# pacote vive na RAIZ do repositório — moto_mcp não tem uma subpasta
+# "servidor", o repositório inteiro é o projeto Python (pyproject.toml
+# também na raiz). Isso é proposital: o moto_mcp é genérico e feito pra
+# ser compartilhado — não deve depender de um caminho absoluto de uma
+# máquina específica.
+#
+# Sem suporte a arquivo .env de propósito: não há nenhum cenário real
+# de uso onde você precisaria sobrescrever REPO_ROOT (mover este pacote
+# pra fora do moto_mcp contradiz a razão de ele existir). Se algum dia
+# precisar mesmo assim, MOTO_MCP_REPO_ROOT como variável de ambiente
+# direta funciona — sem carregar arquivo .env que ninguém vai usar.
+
+from pathlib import Path
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _default_repo_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def _default_vector_db_path() -> Path:
+    # Mesma lógica de auto-localização do REPO_ROOT (ver comentário no
+    # topo do arquivo) — não depende de nenhum caminho absoluto de
+    # máquina específica.
+    return Path(__file__).resolve().parents[1] / ".vector_index"
+
+
+class Settings(BaseSettings):
+    """
+    Configuração do servidor MCP que expõe o próprio moto_mcp.
+
+    Nenhum segredo vive aqui — este serviço só lê/escreve arquivos de
+    texto dentro do próprio repositório, num subconjunto de pastas
+    explicitamente permitido (ver WRITABLE_PREFIXES).
+    """
+
+    model_config = SettingsConfigDict(
+        env_prefix="MOTO_MCP_",
+        case_sensitive=True,
+        extra="ignore",
+    )
+
+    REPO_ROOT: Path = Field(default_factory=_default_repo_root)
+
+    # Extensões que este servidor está disposto a ler. Deliberadamente
+    # restrito a texto/documentação — nunca serve binários, nem
+    # arquivos de config que possam ter segredo (mesmo que o .gitignore
+    # do repositório já devesse excluir isso).
+    READABLE_EXTENSIONS: list[str] = Field(default=[".md", ".txt"])
+
+    # Pastas (relativas à raiz do repo) onde ESCRITA é permitida por
+    # este servidor. Tudo fora disso — global/, agents/, knowledge/,
+    # templates/, handoff/, os arquivos-ponte na raiz (CLAUDE.md,
+    # AGENTS.md etc.) — é só leitura por aqui, de propósito: um agente
+    # conectado neste MCP não deve conseguir reescrever as próprias
+    # regras/comportamento através dele. Ver docs/mcp_server.md,
+    # "Modelo de segurança".
+    #
+    # `profile/` é a exceção deliberada a essa regra: não guarda regra
+    # de comportamento do agente, guarda dado SOBRE o usuário (perfil,
+    # estilo de trabalho, preferências) — natureza diferente de
+    # `global/rules_absolute.md` e companhia. Faz sentido o próprio
+    # agente atualizar isso via replace_section/append_to_section (ex:
+    # "Mike, anota que eu prefiro respostas diretas"), então é
+    # deliberadamente gravável, ao contrário do resto de fora de
+    # projects/clients. Movido de `global/user_profile.md` pra cá por
+    # causa exatamente disso — ver profile/profile.md.
+    WRITABLE_PREFIXES: list[str] = Field(default=["projects", "clients", "profile"])
+
+    # Pastas nunca listadas/lidas, mesmo que tecnicamente dentro do
+    # repo (controle de versão, caches, ambientes virtuais). ".vector_index"
+    # entrou junto com o VECTOR_DB_PATH abaixo — é dado gerado (arquivos
+    # binários do LanceDB), não conteúdo pra listar/ler/buscar como os
+    # outros .md/.txt do repositório.
+    IGNORED_DIR_NAMES: list[str] = Field(
+        default=[".git", "__pycache__", ".venv", "venv", "node_modules", ".pytest_cache", ".vector_index"]
+    )
+
+    # Modelo de embedding usado pela busca semântica (ver
+    # knowledge/vector-search/). Servido localmente via Ollama — nenhuma
+    # chamada sai da máquina. Trocável por variável de ambiente
+    # (MOTO_MCP_EMBEDDING_MODEL) sem tocar em código, desde que o modelo
+    # novo já esteja baixado (`ollama pull <modelo>`).
+    EMBEDDING_MODEL: str = Field(default="bge-m3")
+
+    # Endereço do Ollama. Default explícito (não deixamos o cliente Ollama
+    # decidir sozinho) por causa de um problema real encontrado em teste
+    # manual: se a variável de ambiente OLLAMA_HOST estiver configurada
+    # como "0.0.0.0:porta" (comum quando o Ollama foi configurado pra
+    # aceitar conexão de outros dispositivos na rede), a biblioteca Python
+    # do Ollama usa esse mesmo valor como endereço de DESTINO — e
+    # "0.0.0.0" não é um endereço válido pra um cliente se conectar, só
+    # pro servidor escutar. Resultado: ConnectionError, mesmo com o Ollama
+    # rodando normalmente (confirmável em http://localhost:11434). Por
+    # isso este servidor sempre usa um valor explícito e seguro por
+    # padrão, em vez de herdar essa variável de ambiente.
+    OLLAMA_HOST: str = Field(default="http://127.0.0.1:11434")
+
+    # Dimensão do vetor de embedding — 1024 pro bge-m3. O LanceDB fixa
+    # isso no schema da tabela no momento da criação (ver
+    # mcp_server/vectorstore.py); se trocar de modelo de embedding, essa
+    # dimensão também precisa mudar, e a tabela precisa ser recriada do
+    # zero (reindexação completa — ver knowledge/vector-search/, "mesmo
+    # modelo, não só mesma dimensão").
+    EMBEDDING_DIMENSIONS: int = Field(default=1024)
+
+    # Onde o LanceDB guarda os arquivos do índice vetorial. Fica fora de
+    # todas as pastas de conteúdo (não é projects/, clients/, knowledge/
+    # etc.) e é dado gerado, não fonte — por isso está em
+    # IGNORED_DIR_NAMES acima e deveria estar no .gitignore.
+    VECTOR_DB_PATH: Path = Field(default_factory=_default_vector_db_path)
+
+
+settings = Settings()

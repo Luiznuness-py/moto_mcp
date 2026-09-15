@@ -1,0 +1,39 @@
+[project]
+name = "moto-mcp"
+version = "0.1.0"
+description = "moto_mcp como servidor MCP: expõe o próprio repositório (regras, knowledge, agentes, projetos/clientes) como tools MCP — leitura aberta, escrita restrita a projects/ e clients/."
+authors = [{name = "Yuri Motoshima", email = "yuri.motoshima@gmail.com"}]
+readme = "README.md"
+requires-python = ">=3.13,<4.0"
+dependencies = [
+    "mcp[cli] (>=1.28.0,<2.0.0)",
+    "pydantic (>=2.13.4,<3.0.0)",
+    "pydantic-settings (>=2.12.0,<3.0.0)",
+    "lancedb (>=0.38.0,<0.39.0)",
+    "ollama (>=0.6.2,<0.7.0)",
+]
+
+[tool.poetry]
+package-mode = false
+
+[dependency-groups]
+dev = ["pytest (>=8.0.0,<9.0.0)", "pytest-asyncio (>=0.25.0,<1.0.0)"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+filterwarnings = [
+    # Aviso interno do PRÓPRIO pytest-asyncio (não é código deste
+    # projeto) — usa asyncio.get_event_loop_policy() por baixo, que o
+    # Python 3.14+ marcou como obsoleto. Filtrado especificamente por
+    # mensagem + módulo (não um "ignore" genérico de DeprecationWarning)
+    # pra não esconder avisos de verdade que apareçam depois. Remover
+    # este filtro quando uma versão nova do pytest-asyncio corrigir isso
+    # internamente.
+    "ignore:'asyncio.get_event_loop_policy' is deprecated:DeprecationWarning:pytest_asyncio",
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

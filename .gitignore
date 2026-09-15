@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# moto_mcp — índice vetorial (LanceDB), dado gerado, não fonte.
+# Ver mcp_server/vectorstore.py e knowledge/vector-search/.
+.vector_index/
