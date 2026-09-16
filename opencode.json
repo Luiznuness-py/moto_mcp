@@ -27,21 +27,5 @@
         "apiKey": "{env:ANTHROPIC_API_KEY}"
       }
     }
-  },
-  "agent": {
-    "moto": {
-      "description": "Agente minimo pra consultar o moto-mcp com modelo local — desliga as tools nativas que nao precisamos, reduzindo o tamanho do prompt (achado real: prompt de 9040 tokens sendo truncado pra 2050 sem isso) e a confusao do modelo sobre qual tool usar.",
-      "mode": "primary",
-      "tools": {
-        "bash": false,
-        "edit": false,
-        "write": false,
-        "task": false,
-        "todowrite": false,
-        "webfetch": false,
-        "glob": false,
-        "grep": false
-      }
-    }
   }
 }

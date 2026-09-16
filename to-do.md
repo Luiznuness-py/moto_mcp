@@ -688,6 +688,36 @@ passos.
   Levi, Mike, Mike Review, Red) com papel e arquivo corretos. Sem
   truncamento em nenhuma das 3 chamadas do teste (`truncated = 0`).
 
+## Concluído (continuação 18) — correção da continuação 17
+
+- [x] **O agente `moto` (continuação 17) foi um erro de julgamento,
+  corrigido.** Apontado pelo Yuri: desligar 8 ferramentas nativas do
+  OpenCode (`bash`, `edit`, `write`, `task`, `todowrite`, `webfetch`,
+  `glob`, `grep`) fez UM teste específico passar, mas removeu
+  funcionalidade real (o agente `moto` não conseguia editar arquivo
+  nem rodar shell) e não provava que o problema estava resolvido —
+  só que funcionava com capacidade cortada.
+  **Reteste real, com o agente `build` completo (nada desligado)** +
+  `OLLAMA_CONTEXT_LENGTH=32768` (subido de 16384, que já tinha pouca
+  margem): funcionou igual, chamou `moto-mcp_list_agents`, trouxe os 7
+  agentes corretos, **sem cortar nenhuma tool nativa**. Prompt real
+  medido: 9195–9758 tokens, `truncated = 0`. Prova que o agente `moto`
+  nunca foi necessário — o problema sempre foi só tamanho de contexto.
+  **Removido `"agent": {"moto": {...}}` do `opencode.json`** — volta a
+  usar o agente padrão do OpenCode, sem restrição.
+  **Limite real de hardware registrado, não escondido**: `32768` de
+  contexto usa ~15.473 MiB dos 16.303 MiB de VRAM da RTX 5070 Ti (95%,
+  medido com `nvidia-smi`, não estimado). Não tem margem pra crescer
+  mais nesse hardware — conversa longa/multi-turno ainda pode esbarrar
+  no mesmo teto de truncamento. Não é "resolvido pra sempre", é
+  "funciona pra pergunta pontual, com pouca folga". Alternativas
+  registradas, não implementadas: `qwen3:8b` (libera VRAM), cache de
+  contexto quantizado (`OLLAMA_KV_CACHE_TYPE`), ou usar nuvem (Claude)
+  pra sessão que precisa de mais contexto.
+  `docs/guia_opencode.md` e `docs/mcp_server.md` atualizados pra
+  refletir isso — sem `--agent moto`, `OLLAMA_CONTEXT_LENGTH=32768`,
+  aviso explícito sobre a margem apertada de VRAM.
+
 ## Próximos passos (ordem sugerida)
 - [ ] Testar `search_semantic`/`reindex_search`/`compact_search_index` de
   verdade, conectado num cliente MCP de verdade (ex: Claude Desktop,

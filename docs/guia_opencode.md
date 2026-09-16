@@ -67,25 +67,29 @@ opencode --version
    `ollama pull qwen3:8b` — menos preciso, mas mais leve. Ainda não
    testado nesse tamanho.)
 3. **Suba o Ollama com contexto maior que o padrão** — sem isso, o
-   prompt (instruções do OpenCode + as tools do `moto_mcp`) é cortado
-   antes do modelo ver as tools, e nada funciona (achado real, não
-   suposição — ver `to-do.md`, continuação 17):
+   prompt (instruções do OpenCode + as tools nativas + as tools do
+   `moto_mcp`) é cortado antes do modelo ver as tools, e nada funciona
+   (achado real, não suposição — ver `to-do.md`, continuações 17/18):
    ```powershell
-   $env:OLLAMA_CONTEXT_LENGTH = "16384"
+   $env:OLLAMA_CONTEXT_LENGTH = "32768"
    ollama serve
    ```
    (deixa essa janela do terminal aberta rodando; se o Ollama já
    estiver rodando como app/serviço, feche-o antes e suba assim
    manualmente, ou configure a variável de ambiente permanente do
    Windows pra ele sempre subir com esse valor.)
+
+   **Atenção — limite real de hardware, não promessa**: com
+   `32768`, o `qwen3:14b` já usa ~95% da VRAM de uma RTX 5070 Ti
+   (16GB) — testado e medido, não estimado. Isso funciona pra uma
+   pergunta pontual, mas **não tem muita margem pra conversa longa**
+   (histórico acumulando turno a turno, resultado grande de alguma
+   tool). Se travar/ficar lento com sessão longa, ou baixe pra
+   `qwen3:8b` (libera VRAM, um pouco menos preciso), ou use Claude
+   (Opção B) pra sessão que precisa de mais contexto.
 4. Se o nome do modelo que você baixou for diferente de `qwen3:14b`,
    edite `opencode.json` na raiz deste repositório e troque o nome lá
    (é a chave dentro de `"provider" > "ollama" > "models"`).
-5. **Use o agente `moto`**, não o padrão — ele já vem configurado no
-   `opencode.json` (`"agent": {"moto": {...}}`) desligando ferramentas
-   nativas do OpenCode que não precisamos, deixando o prompt menor e
-   o modelo menos confuso sobre qual ferramenta usar. No passo 6 abaixo,
-   é o `--agent moto` que faz a diferença.
 
 ### Opção B — Claude/Anthropic (nuvem, pago, sem instalar nada local)
 
@@ -138,14 +142,13 @@ Esperado: `moto-mcp` com um ✓ e "connected". Se aparecer erro aqui, o
 problema é na configuração do `moto_mcp`/Poetry, não no modelo de IA —
 ver `docs/mcp_server.md`.
 
-**Escolha o modelo — e, se for Ollama, use `--agent moto`** (o agente
-customizado do passo anterior; sem ele, testado e confirmado que o
-modelo se perde entre as ferramentas nativas do OpenCode e não usa as
-do `moto_mcp`):
+**Escolha o modelo** (dentro do OpenCode, ou direto na linha de
+comando — agente padrão do OpenCode, sem restrição nenhuma de
+ferramenta):
 
 ```powershell
-opencode --agent moto --model ollama/qwen3:14b
-# ou, pra usar Claude (não precisa do --agent moto):
+opencode --model ollama/qwen3:14b
+# ou, pra usar Claude:
 opencode --model anthropic/claude-sonnet-5
 ```
 
@@ -159,9 +162,9 @@ vindo de `agents/bill.md`, que só existe porque o modelo chamou uma tool
 do `moto_mcp` (`moto-mcp_list_agents` ou `moto-mcp_read_document` — o
 OpenCode prefixa o nome da tool com o nome do servidor MCP) pra ler o
 arquivo, não porque ele já sabia disso de antemão. Testado de verdade
-com `qwen3:14b` + agente `moto`: funciona.
+com `qwen3:14b`, agente padrão (`build`), **sem desligar nenhuma
+ferramenta nativa** — funciona.
 
 Se a resposta vier genérica ou errada, confirme primeiro o Passo 6
-(`opencode mcp list`) antes de desconfiar do modelo — e confirme que
-está usando `--agent moto` (Ollama) e que o Ollama subiu com
-`OLLAMA_CONTEXT_LENGTH=16384` (passo 3).
+(`opencode mcp list`) antes de desconfiar do modelo — e confirme que o
+Ollama subiu com `OLLAMA_CONTEXT_LENGTH=32768` (passo 3).
