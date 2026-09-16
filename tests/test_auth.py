@@ -12,6 +12,9 @@ from starlette.testclient import TestClient
 from mcp_server.auth import BearerTokenMiddleware
 
 
+_VALID_TOKEN = "a" * 32  # mesmo piso de tamanho exigido em modo "lan" (mcp_server/network.py)
+
+
 def _make_app(token: str) -> Starlette:
     async def ok(request):
         return JSONResponse({"status": "ok"})
@@ -23,17 +26,17 @@ def _make_app(token: str) -> Starlette:
 
 class TestBearerTokenMiddleware:
     def test_rejects_missing_header(self):
-        client = TestClient(_make_app("segredo"))
+        client = TestClient(_make_app(_VALID_TOKEN))
         resp = client.get("/")
         assert resp.status_code == 401
 
     def test_rejects_wrong_token(self):
-        client = TestClient(_make_app("segredo"))
+        client = TestClient(_make_app(_VALID_TOKEN))
         resp = client.get("/", headers={"Authorization": "Bearer token-errado"})
         assert resp.status_code == 401
 
     def test_accepts_correct_token(self):
-        client = TestClient(_make_app("segredo"))
-        resp = client.get("/", headers={"Authorization": "Bearer segredo"})
+        client = TestClient(_make_app(_VALID_TOKEN))
+        resp = client.get("/", headers={"Authorization": f"Bearer {_VALID_TOKEN}"})
         assert resp.status_code == 200
         assert resp.json() == {"status": "ok"}
