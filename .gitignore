@@ -220,3 +220,8 @@ __marimo__/
 # moto_mcp — índice vetorial (LanceDB), dado gerado, não fonte.
 # Ver mcp_server/vectorstore.py e knowledge/vector-search/.
 .vector_index/
+
+# moto_mcp — settings.yml real do SearXNG local. Contém secret_key
+# gerado na máquina de quem sobe o container — nunca commitar. O
+# modelo sem segredo fica em searxng/settings.yml.example.
+searxng/settings.yml

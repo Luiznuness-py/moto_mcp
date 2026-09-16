@@ -216,33 +216,502 @@ passos.
   permitidos em `profile/`, `global`/`agents` continuam bloqueados) — 5/5
   no harness manual sem pytest. Sincronizado e conferido byte-a-byte nos
   7 arquivos tocados.
-- [ ] **`profile/profile.md` ainda é o template vazio** — Yuri só moveu
-  o arquivo, não preencheu. Ofereci rascunhar o preenchimento com base
-  no que observei nesta conversa (ciclo incremental, exige verificação
-  de gravação por releitura, não aceita "pronto" sem evidência, cobra
-  entender o "porquê"); ainda sem resposta.
+- [x] **Decisão: `profile/profile.md` fica vazio de propósito por
+  enquanto.** Rascunhei um preenchimento com base no que observei nesta
+  conversa (ciclo incremental, exige verificação de gravação por
+  releitura, não aceita "pronto" sem evidência, cobra entender o
+  "porquê"), separando claramente o que era observado direto do que era
+  inferência minha. Yuri decidiu não usar esse rascunho agora — o modelo
+  de preenchimento é incremental sob demanda: o próprio usuário edita
+  quando quiser, ou pede pro agente atualizar uma seção específica
+  durante uma conversa normal (ex: "Mike, anota que eu prefiro X"). Não
+  é um preenchimento único de uma vez. Isso já é suportado sem código
+  novo — `replace_section`/`append_to_section` já funcionam em
+  `profile/profile.md` desde a mudança acima — então não fica nada
+  pendente de implementação aqui, só o hábito de usar quando fizer
+  sentido na conversa.
+
+## Concluído (continuação 7)
+
+- [x] **Primeira rodada real de `scripts/reindex.py` com escopo cheio,
+  confirmada.** Yuri já tinha rodado o reindex com o escopo corrigido em
+  algum momento entre sessões (o teste "Mike quem sou eu" já mostrava
+  `agents/`/`CODEX.md` nos resultados) — essa rodada só trouxe 4 chunks
+  novos/atualizados (os `.md` que eu editei nesta sessão:
+  `docs/mcp_server.md`, `projects/moto-mcp-framework-server.md`,
+  `README.md`, `to-do.md`), 218 sem mudança, total 222. Confirma que a
+  reindexação incremental está funcionando de verdade: só chama o Ollama
+  pro que mudou.
+- [x] **Primeira rodada real de `scripts/verify_search.py`: 10/13.**
+  Analisando as 3 falhas:
+  - **Q6** ("de onde vêm as práticas da checklist") — achado real: existia
+    `docs/security_test_master_checklist.md`, cópia acidental e
+    byte-idêntica de `knowledge/security/security_test_master_checklist.md`,
+    diluindo a relevância entre as duas. Investigado: o `docs/` nasceu de
+    aplicar errado a convenção de `agents/red.md` ("todo sistema novo
+    duplica o checklist no próprio `docs/`") — essa convenção é pra
+    projetos novos do framework, não pro `docs/` raiz do próprio
+    moto_mcp. Nunca foi de fato adaptado, apesar do changelog anterior
+    dizer que foi. Yuri confirmou: remover a duplicata. Feito:
+    `projects/moto-mcp-framework-server.md` corrigido pra registrar o
+    que aconteceu de verdade; `knowledge/security/security_test_master_checklist.md`
+    segue como única fonte. Falta só apagar o arquivo no computador (ver
+    "Próximos passos" — não consigo fazer isso remotamente, `device_bash`
+    segue bloqueado pelo bug do Windows).
+  - **Q13** ("pra qual agente eu direciono dúvida de segurança") — Yuri
+    corrigiu o meu entendimento: o gabarito apontava pra
+    `agents/mike.md#Direcionamento de especialistas` (a seção que FALA
+    SOBRE rotear), mas quem realmente responde "pra qual agente eu vou"
+    é o próprio especialista, `agents/red.md#Identidade e papel`. O Mike
+    direciona, mas o agente certo é o Red — a busca já acertava isso
+    antes, o gabarito é que estava errado. Corrigido em
+    `mcp_server/verification_questions.py`, com o raciocínio comentado
+    ali mesmo.
+  - **Q9** ("antes do servidor atual existir, o que fazia esse papel") —
+    fica em aberto por enquanto. Scores bem mais baixos que o normal
+    (máx. 0.49 contra 0.55–0.70 nas outras) sugerem limitação genuína de
+    busca semântica pra essa pergunta específica, não bug — decidido não
+    mexer ainda.
+- [x] **`docs/security_test_master_checklist.md` apagado (pelo Yuri, via
+  VS Code) e reindexado.** `reindex.py` reportou 8 chunks removidos
+  (exatamente as seções daquele arquivo) e 3 novos/atualizados (os .md
+  que eu tinha editado). `verify_search.py` rodado de novo: Q13 passou
+  (gabarito corrigido), mas **Q6 continuou falhando** — minha hipótese de
+  que a duplicata era a causa raiz estava incompleta. Investigando o
+  conteúdo real da seção esperada
+  (`knowledge/security/security_test_master_checklist.md#Fontes externas
+  consultadas`), o problema é outro: a seção é só uma lista crua de
+  siglas/nomes próprios (OWASP, MITRE, NIST, CIS...), sem frase em
+  linguagem natural — pouco "gancho" semântico pro embedding conectar com
+  uma pergunta conceitual tipo "de onde vêm as práticas". Mesma
+  categoria de limitação da Q9, só que aqui deu pra apontar a causa
+  exata. Yuri pediu pra melhorar o texto do arquivo (não pra aceitar
+  como limitação) — acrescentei uma frase de introdução em linguagem
+  natural antes da lista, sem tirar/mudar nenhuma fonte:
+  "As práticas, prioridades e itens deste checklist não foram inventados
+  do zero — vêm da consolidação dos seguintes padrões, guias e
+  frameworks de segurança reconhecidos pela indústria...". Aplicado nos
+  DOIS arquivos — `knowledge/security/security_test_master_checklist.md`
+  E `knowledge/security/security_testing_baseline.md` (o canônico, do
+  qual todo projeto novo duplica) — pra não reintroduzir o mesmo
+  problema em duplicações futuras. Sincronizado e conferido byte-a-byte.
+  Ainda falta rodar `reindex.py`/`verify_search.py` de novo pra confirmar
+  se a mudança resolveu a Q6 de fato (hipótese, não comprovado ainda).
+
+- [x] **Q6 confirmada resolvida: 12/13.** Rodado `reindex.py` (4
+  chunks novos/atualizados: as duas seções "Fontes externas
+  consultadas" editadas, mais dois chunks do próprio `to-do.md`; 0
+  removidos) e `verify_search.py` de novo — Q6 saiu de "fora do top-8"
+  pra **#1 com score 0.6607**. Confirma a hipótese: a frase de
+  introdução em linguagem natural foi suficiente, sem mudar nenhuma
+  fonte da lista.
+- [x] **Mesma técnica aplicada na Q9.** Olhando o conteúdo real de
+  `projects/moto-mcp-server.md#Papel (histórico)` (não é lista crua como
+  a Q6 — tem texto corrido), achei o mesmo tipo de lacuna: a seção
+  mergulha direto nos detalhes técnicos ("Gateway MCP standalone do
+  MotoOCR...") sem nunca dizer explicitamente "antes do servidor atual
+  existir, este era o papel" — essa relação temporal só existia no
+  título do arquivo e no aviso do topo (chunks diferentes, não a seção
+  "Papel" em si). Acrescentei uma frase de abertura equivalente:
+  "Antes do servidor atual (`moto-mcp-framework-server`) existir, era
+  este projeto que ocupava esse papel no repositório: ...". Sincronizado
+  e conferido byte-a-byte (4209 bytes). Ainda falta rodar
+  `reindex.py`/`verify_search.py` de novo pra confirmar se resolveu —
+  se der certo, é 13/13.
+
+- [x] **`poetry run pytest -v` rodado de verdade: 74/74 passou.**
+  Yuri decidiu não esperar a confirmação do 13/13 da Q9 antes de seguir
+  ("vamos entender melhor no dia a dia") — a fase de reindex/verify_search
+  fica encerrada aqui, com a correção da Q9 aplicada mas sua confirmação
+  final adiada pro uso real em vez de mais uma rodada de teste fixo.
+  74/74 confirma contra pytest/LanceDB/Ollama reais (não só o harness
+  manual sem pytest usado na sessão na nuvem) que `test_indexing.py`,
+  `test_list_agents.py` e `test_write_restrictions.py` — os três
+  escritos só com harness manual até agora — realmente passam no
+  ambiente de verdade. Achado no output: um novo warning de depreciação
+  (`'asyncio.set_event_loop_policy' is deprecated`) irmão do que já era
+  filtrado (`'asyncio.get_event_loop_policy'`) em `pyproject.toml` —
+  mesma causa (interno do `pytest-asyncio`, não é código nosso).
+  Perguntei ao Yuri se quer que eu adicione ao filtro também; resposta
+  ainda pendente.
 
 ## Próximos passos (ordem sugerida)
-- [ ] Rodar `poetry run python scripts/reindex.py` de novo com o escopo
-  corrigido (item pendente da continuação 4, ainda não feito) — o índice
-  atual (60 chunks) ainda reflete só knowledge/projects/clients, sem
-  `agents/`, `global/` etc.
-- [ ] Rodar `poetry run python scripts/verify_search.py` contra o índice
-  já reindexado com o escopo novo (13 perguntas agora, incluindo 3 sobre
-  `agents/`) — ver seção "Verificação obrigatória" em
-  `embeddings-e-busca-semantica.md`. Não seguir pro próximo passo sem
-  isso passando.
-- [ ] Rodar `poetry run pytest -v` de verdade neste computador —
-  confirma `tests/test_indexing.py`, `tests/test_list_agents.py` (e o
-  resto da suíte) contra o pytest/LanceDB/Ollama reais, não só o harness
-  manual sem pytest usado na sessão na nuvem.
-- [ ] Decidir como a busca vetorial se encaixa nas tools existentes do
-  `mcp_server` — substitui `search_documents` (substring), ou convivem
-  (ex: uma tool nova, `search_semantic`, ao lado da atual)? Incluir nessa
-  decisão se/como expor `VectorStore.compact()` como tool também (hoje só
-  existe como método Python, chamável manualmente via REPL), e se/como
-  expor `reindex()` como tool (rodar reindexação a partir de uma
-  conversa, não só via `scripts/reindex.py` na linha de comando).
+- [ ] (Opcional) Decidir se adiciona o filtro do warning
+  `'asyncio.set_event_loop_policy' is deprecated` em
+  `[tool.pytest.ini_options] filterwarnings` do `pyproject.toml`, mesmo
+  padrão do filtro já existente.
+- [x] **Confirmado: a correção da Q9 chegou a 13/13.** Rodado
+  `scripts/verify_search.py` de novo nesta sessão (2026-09-15, como
+  parte da validação do fix do `sys.path`/`package-mode`) —
+  `13/13 perguntas encontraram o chunk certo no top-8`. Ficou pendente
+  desde a continuação 7; sem essa confirmação explícita aqui, o item
+  ficava marcado como aberto mesmo já resolvido.
+- [x] **Decidido e implementado: busca vetorial virou 3 tools novas no
+  `mcp_server`.** Perguntei ao Yuri as três sub-decisões que ficaram em
+  aberto desde a continuação 4/5, e a resposta pra todas foi "sim,
+  fazer":
+  1. `search_semantic(query, top_k=5)` — nova tool ao lado de
+     `search_documents` (substring), não substituindo — cada uma boa pra
+     um tipo de busca (exata vs. conceitual/paráfrase).
+  2. `reindex_search()` — expõe `indexing.reindex()` como tool, pra um
+     agente conectado disparar reindexação direto de uma conversa (não
+     só via `scripts/reindex.py` na linha de comando).
+  3. `compact_search_index(older_than_days=None)` — expõe
+     `VectorStore.compact()` também (essa era a opção NÃO recomendada
+     que eu tinha sugerido manter manual, mas o Yuri preferiu expor).
+  Implementado em `mcp_server/tools.py`: as três tools são "fininhas" de
+  propósito — cada uma delega pra uma função `_..._impl()` privada
+  testável com fakes (store/embedder reais só são instanciados dentro
+  da tool pública, nunca como parâmetro exposto no schema MCP — senão
+  vazaria detalhe de injeção de dependência pro cliente). `search_semantic`
+  não escreve nada (só lê o índice); `reindex_search`/`compact_search_index`
+  tocam o índice vetorial (dado gerado em `Settings.VECTOR_DB_PATH`), não
+  arquivo do repositório — por isso não passam por
+  `paths.ensure_writable()`/`WRITABLE_PREFIXES`, é escopo diferente.
+  Registradas em `server.py` e em `get_capabilities()` (com uma nota
+  indicando quais precisam do Ollama rodando: `search_semantic` e
+  `reindex_search` sim, `compact_search_index` não, já que só mexe no
+  LanceDB). De quebra, achei e corrigi um gap: `list_agents` nunca tinha
+  sido adicionada em `docs/mcp_server.md` ("Tools expostas") — corrigido
+  junto.
+  Testes novos: `tests/test_search_tools.py` (7 casos — formatação de
+  resultado achatada, embed+top_k repassados corretamente, índice vazio
+  não é erro, mapeamento completo de `IndexingReport` pro dict de
+  retorno, `compact` delega `older_than_days` e confirma) — todos com
+  fakes, sem precisar de LanceDB/Ollama de verdade (mesma filosofia de
+  `test_indexing.py`). 7/7 no harness manual sem pytest. Confirmado
+  também que `mcp_server/tools.py` e `mcp_server/server.py` importam
+  limpo no sandbox da nuvem (o pacote `mcp` está disponível aqui,
+  então até validei que o `FastMCP` aceita as assinaturas das 3 tools
+  novas sem erro, não só a lógica isolada). Sincronizado e conferido
+  byte-a-byte em todos os arquivos tocados
+  (`tools.py`/`server.py`/`docs/mcp_server.md`/`tests/test_search_tools.py`).
+
+- [x] **`poetry run pytest -v` confirmado: 81/81 passou** (os 74 de
+  antes + os 7 novos de `tests/test_search_tools.py`, todos verdes
+  contra pytest/LanceDB/Ollama reais). Nenhuma regressão nas tools
+  existentes. Fecha o ciclo desta rodada de trabalho: RAG completo
+  (repositório como fonte → chunking/embedding bge-m3 via Ollama →
+  LanceDB → 12 tools MCP, substring e semântica lado a lado) com
+  cobertura de teste real de ponta a ponta.
+- [x] **Verificação independente de que registro e documentação batem
+  de verdade** — não só relendo o código, perguntei direto pro objeto
+  `FastMCP` (`server.mcp.list_tools()`) quais tools ele tem registradas
+  e comparei com `get_capabilities()`. Bateu 1:1 nas 12 tools (a única
+  "diferença" é `get_capabilities` não se autolistar no próprio
+  catálogo, o que é esperado, não bug). Confirma que `search_semantic`/
+  `reindex_search`/`compact_search_index` estão de fato disponíveis
+  pra qualquer cliente MCP conectado, não só declaradas no código.
+
+## Concluído (continuação 9)
+
+- [x] **Bug real achado testando `poetry run mcp dev mcp_server/server.py`
+  (MCP Inspector): `ModuleNotFoundError: No module named 'mcp_server'`.**
+  Mesmo sintoma do bug antigo de `scripts/reindex.py`, causa diferente:
+  `mcp dev` carrega `server.py` direto pelo CAMINHO do arquivo via
+  `importlib` (`mcp/cli/cli.py:_import_server`), não via `python -m` —
+  isso não bota nem o cwd nem a pasta do arquivo no `sys.path`. Como
+  `python -m mcp_server.server` (usado no `claude_desktop_config.json`)
+  já funcionava só porque o `-m` bota o cwd no `sys.path` sozinho,
+  ninguém tinha notado que `server.py` não sobrevivia a ser carregado de
+  outro jeito. Corrigido com o mesmo remendo já usado em
+  `scripts/reindex.py`: `sys.path.insert` da raiz do repo no topo de
+  `server.py`, antes do `from mcp_server import tools`. Verificado de
+  duas formas antes de sincronizar: (1) simulei o mecanismo exato do
+  `mcp dev` (`importlib.util.spec_from_file_location` + `exec_module`)
+  rodando de `/tmp` — carregou limpo; (2) rodei `python -m
+  mcp_server.server` de novo pra confirmar que o caminho que já
+  funcionava continua funcionando (sem regressão). Sincronizado e
+  conferido byte-a-byte (1869 bytes).
+
+## Concluído (continuação 10)
+
+- [x] **Causa raiz do `ModuleNotFoundError` eliminada — não só contornada.**
+  O remendo da continuação 9 (`sys.path.insert` em `server.py`) resolvia o
+  sintoma, não a causa: `package-mode = false` no `pyproject.toml` impedia
+  o Poetry de instalar `mcp_server` no venv, então qualquer forma de
+  carregar o arquivo que não passasse pelo `sys.path` manual quebrava.
+  Corrigido de vez: `package-mode = false` removido, `packages =
+  [{include = "mcp_server"}]` adicionado, `poetry install` agora instala
+  `mcp_server` em modo editável. Com isso, `sys.path.insert` foi removido
+  dos 4 arquivos que tinham o remendo (`server.py`,
+  `scripts/reindex.py`, `scripts/ask.py`, `scripts/verify_search.py`).
+  Validado nos três mecanismos de carregamento que motivaram o remendo
+  original: `pytest` (81/81), `python -m mcp_server.server`, carregamento
+  por caminho via `importlib` (mesmo mecanismo do `mcp dev`/MCP
+  Inspector) — e os três scripts rodados diretos
+  (`poetry run python scripts/reindex.py` etc., sem `-m`). Bônus:
+  `verify_search.py` deu **13/13** nessa rodada (a Q9, em aberto desde a
+  continuação 7, também passou).
+- [x] **Comentários/docstrings do código revisados pra tirar referência
+  pessoal.** `mcp_server/config.py`, `mcp_server/server.py` e
+  `mcp_server/verification_questions.py` tinham trechos endereçando
+  alguém diretamente ("você precisaria...") ou atribuindo uma correção a
+  uma pessoa específica no meio da explicação técnica. Reescrito pra
+  manter o raciocínio técnico e tirar a referência pessoal — escopo
+  limitado a `.py` (`mcp_server/`, `scripts/`, `tests/`); os `.md` de
+  changelog/histórico (este arquivo, `projects/*.md`) continuam
+  registrando decisão com autor, como já documentado em
+  `global/workflow.md`. `81/81` confirmado depois da mudança.
+- [x] **Achado e corrigido: `poetry run mcp dev mcp_server/server.py`
+  (recomendado em `docs/mcp_server.md` pra testar no MCP Inspector) não
+  funciona de verdade.** O subcomando `dev` do `mcp[cli]` sempre delega
+  a execução pra um ambiente `uv` isolado (`uv run --with mcp mcp run
+  <arquivo>`), ignorando o venv do Poetry mesmo chamado com `poetry run`
+  na frente — esse ambiente `uv` não tem `mcp_server` nem `lancedb`/
+  `ollama`/`pydantic-settings` instalados, então o servidor falha ao
+  subir (confirmado testando: status "Failed" no Inspector). Corrigido
+  em `docs/mcp_server.md`: instrução trocada por abrir o Inspector direto
+  (`npx @modelcontextprotocol/inspector`) e configurar o servidor na mão
+  (`Command: poetry`, `Arguments`: `run`/`python`/`-m`/`mcp_server.server`
+  como itens separados — o campo não aceita a string inteira de uma vez,
+  isso já pegou um usuário real). Testado de ponta a ponta: servidor
+  conecta e responde no Inspector com esse caminho.
+
+## Concluído (continuação 11)
+
+- [x] **Prompt injection — mitigação mínima implementada.** Escolhida a
+  opção de aviso explícito (não a estrutural): `read_document`,
+  `search_documents` e `search_semantic` ganharam um trecho fixo
+  (`_UNTRUSTED_CONTENT_NOTE` em `mcp_server/tools.py`) anexado à
+  docstring, marcando o retorno como dado do repositório, nunca
+  instrução a obedecer. `get_capabilities` também referencia o aviso.
+  Escolha justificada por ser o menor pedaço correto: não muda o
+  formato de retorno (sem risco de quebrar quem já consome essas
+  tools), só marca a intenção pro LLM chamador. `92/92` testes
+  passando depois da mudança (não é teste automatizado de resistência a
+  injeção de verdade — isso exigiria um LLM de fato tentando obedecer,
+  fora do escopo de teste unitário; fica como limite conhecido).
+- [x] **Transporte de rede (streamable-http) implementado e testado de
+  ponta a ponta.** Novo módulo `mcp_server/network.py`
+  (`ensure_safe_bind_host`) — garantia estrutural, mesma filosofia de
+  `paths.ensure_writable`: recusa subir (`UnsafeBindHostError`) se o
+  host não for um endereço da faixa do Tailscale (`100.64.0.0/10`),
+  cobrindo vazio, `0.0.0.0`, `::`, IP de LAN comum e IP público — 11
+  casos novos em `tests/test_network.py`. Novo ponto de entrada
+  `mcp_server/server_network.py` (`python -m
+  mcp_server.server_network`), reaproveita o mesmo `mcp` de
+  `server.py` (mesmas 12 tools, sem duplicar registro), sobe com
+  `mcp.run(transport="streamable-http")`. `Settings.NETWORK_HOST`/
+  `NETWORK_PORT` novos em `config.py`, sem default de host de
+  propósito (força configuração explícita). Validado com Tailscale
+  real rodando nesta máquina: subiu bindado no IP real do tailnet
+  (confirmado no log do uvicorn), respondeu HTTP real na porta
+  (`406` num GET simples — esperado, é o handshake do streamable-http
+  rejeitando requisição fora do protocolo, não "conexão recusada"), e
+  recusou subir com host vazio/`0.0.0.0`/IP de LAN comum. `92/92`
+  testes passando.
+  **Decisão de autenticação seguida**: Tailscale como única fronteira
+  de confiança, sem token/auth própria — a proposta que estava em
+  aberto, adotada por autorização de seguir em frente ("pode fazer
+  todas"), não por confirmação item a item. Registrado explicitamente
+  em `docs/mcp_server.md`, "Modelo de segurança deste modo", incluindo
+  a condição que tornaria isso insuficiente.
+- [x] `docs/mcp_server.md` e `README.md` atualizados com o modo de rede
+  real (não mais "planejado") — como rodar, exemplo de config remota
+  pro OpenCode, modelo de segurança explícito.
+- [x] **Evidência cruzada de `moto_ocr`/`moto_rules` (repositórios
+  privados próprios, já em produção e com pentest/red team documentado)
+  que apoia a decisão de autenticação acima**: o pentest do `moto_ocr`
+  (`reviews/pentest-findings-2026-07-02.md`, achado #4) encontrou 3
+  furos reais no MCP gateway dele — sem checagem de scope por tool, sem
+  isolamento multi-tenant em duas tools, leitura arbitrária de arquivo
+  local via uma tool (`document_path`). Aceito como risco baixo só
+  porque o gateway era single-consumer, com pré-requisito bloqueante
+  registrado: fechar os 3 antes de liberar acesso a um segundo
+  consumidor. `moto_rules` incorporou a lição desde o início
+  (`docs/security_audit/README.md`: "MCP: mesma autorização das rotas
+  REST"). Aplicando ao `moto_mcp`: o furo de leitura arbitrária de
+  arquivo já não existe aqui (`paths.py` confina tudo à raiz do repo,
+  só `.md`/`.txt`) — mais restrito do que o `moto_ocr` estava antes do
+  pentest dele nesse ponto específico. O furo que mapeia de verdade é
+  "sem scope": o `moto_mcp` também é tudo-ou-nada. Mesma regra de risco
+  aceito aplicada aqui — Tailscale como fronteira, sem scope, enquanto
+  for só dispositivo do próprio Yuri.
+
+## Concluído (continuação 12)
+
+- [x] **`opencode.json` na raiz — OpenCode registrado como cliente MCP
+  do `moto_mcp`.** Validado de verdade, não só escrito: `opencode mcp
+  list` mostrou `moto-mcp` como `connected`, subindo o processo sozinho
+  via stdio. Dois providers de modelo configurados (usuário escolhe em
+  tempo de uso, nenhum obrigatório): `ollama` (local, `@ai-sdk/openai-
+  compatible`, `baseURL` via `MOTO_MCP_OPENCODE_OLLAMA_BASE_URL`) e
+  `anthropic` (nuvem, `apiKey` via `{env:ANTHROPIC_API_KEY}`). Bug real
+  encontrado e corrigido testando: a chave do modelo dentro de
+  `provider.ollama.models` é o que vai literal pra API do Ollama — não
+  dá pra parametrizar por env var ali (só o campo `name`, que é só
+  label, foi testado com `{env:...}` e o valor NÃO era resolvido pro
+  id real enviado à API). Corrigido fixando a chave
+  (`"qwen2.5-coder:14b"`) com instrução no guia pra editar manualmente
+  se o modelo baixado for outro. **Não validado**: uma resposta real de
+  inferência via Ollama (Ollama não estava rodando no momento do
+  teste) — só a conexão MCP e a resolução do model id foram
+  confirmadas de ponta a ponta (`opencode models` mostrou
+  `ollama/qwen2.5-coder:14b` corretamente).
+- [x] **`docs/guia_opencode.md` criado** — passo a passo em linguagem
+  simples pra usuário de baixo conhecimento técnico: instalar Node,
+  instalar OpenCode com versão fixada (`opencode-ai@1.18.31`, não
+  `@latest` — mitigação prática contra risco de supply-chain do npm,
+  mais barata que uma imagem Docker customizada), escolher entre Ollama
+  local ou Claude/Anthropic na nuvem, configurar variável de ambiente,
+  subir, e testar com um exemplo concreto (perguntar "quem é o Bill" e
+  confirmar que a resposta vem de `agents/bill.md` via tool call, não
+  de conhecimento prévio do modelo). `README.md` linkado pro guia.
+
+## Concluído (continuação 13)
+
+- [x] **Reindexação automática no startup.** Quem clona o repositório e
+  sobe o servidor pela primeira vez tinha `search_semantic` vazio até
+  lembrar de rodar `scripts/reindex.py` manualmente — e desatualizado
+  de novo depois de qualquer edição, pelo mesmo motivo. Novo
+  `mcp_server/startup.py` (`reindex_on_startup`), chamado no início de
+  `server.py` e `server_network.py`, antes de `mcp.run(...)`. Barato de
+  chamar toda vez porque `reindex()` já é incremental (só reprocessa o
+  que mudou, por `content_hash`). Falha de embedding/vectorstore nunca
+  impede o servidor de subir — vira aviso no log, não exceção (as
+  outras 11 tools não dependem do Ollama). Testado nos dois sentidos:
+  4 casos novos em `tests/test_startup.py` (fakes, sucesso e as duas
+  falhas) e teste real de verdade com o Ollama desta máquina
+  efetivamente fora do ar — `python -m mcp_server.server` imprimiu o
+  aviso e subiu normalmente, não travou. `96/96` testes passando.
+
+## Concluído (continuação 14)
+
+- [x] **Tool `search_web` — busca na internet aberta via SearXNG.**
+  Decisão: instância própria (standalone), não o container do projeto
+  `n8n` do usuário — o `n8n` não expõe porta pro host (só alcançável na
+  rede Docker isolada `n8n-local`), e acoplar o `moto_mcp` a outro
+  projeto pessoal contradiz o objetivo de ser portátil (qualquer um
+  clona e usa). `docker-compose.yml` na raiz (imagem
+  `searxng/searxng:2026.9.12-d4f00d15d` — mesma versão já validada
+  rodando no `n8n`, não uma tag chutada), `searxng/settings.yml.example`
+  (`use_default_settings: true` + `search.formats` incluindo `json`,
+  obrigatório pra API funcionar — SearXNG recusa `format=json` por
+  padrão) e `.gitignore` cobrindo `searxng/settings.yml` real (carrega
+  `secret_key` gerado, nunca commitado). Novo `mcp_server/websearch.py`
+  — função simples (`httpx.get`), sem Protocol/adapter como
+  embeddings/vectorstore têm: não existe plano de trocar de motor de
+  busca web, construir essa abstração agora seria prematuro. Aviso de
+  conteúdo não confiável **mais forte** que o das outras tools
+  (`_UNTRUSTED_WEB_CONTENT_NOTE` em `tools.py`) — conteúdo vem de
+  qualquer página da internet, superfície de prompt injection maior que
+  arquivo do próprio repositório. `tests/test_websearch.py` (6 casos,
+  cliente httpx falso injetado — mesmo padrão de
+  `OllamaEmbeddingProvider`). `102/102` testes passando.
+  **Correção de rumo na mesma sessão**: primeira tentativa de validar
+  usou `docker`/`docker.exe`, que não existe nesta máquina — erro
+  meu, ignorando a regra já documentada em `global/yuri_profile.md`
+  ("Podman, nunca Docker puro") e uma pista que eu já tinha lido e não
+  conectei (`n8n/config/searxng.env` tem `container=podman`
+  literalmente escrito nele). Corrigido: `podman`/`podman machine` já
+  instalados e a VM rodando nesta máquina. **Validado de ponta a
+  ponta de verdade**: `podman compose -p moto-mcp -f docker-compose.yml
+  up -d searxng` subiu o container (imagem pinada existe, não é tag
+  chutada), `curl` no endpoint real devolveu JSON, e
+  `mcp_server.websearch.search_web(...)` chamado sem mock nenhum
+  devolveu resultado real da web (`python.org` etc.). Comentários/docs
+  corrigidos de "docker compose" pra "podman compose -p moto-mcp -f
+  docker-compose.yml" em todos os arquivos tocados
+  (`docker-compose.yml`, `searxng/settings.yml.example`,
+  `mcp_server/websearch.py`, `docs/mcp_server.md`) — nome do arquivo
+  continua `docker-compose.yml` de propósito (é só o formato,
+  compatível; mesma convenção já usada em `moto_ocr`/`moto_rules`).
+
+## Concluído (continuação 15)
+
+- [x] **`search_web` ganhou paginação (`page`) em vez de truncar
+  conteúdo.** Testando com dado real, o campo `content` de cada
+  resultado já vem sem HTML (confirmado com 135 resultados reais de 4
+  buscas diferentes — `format=json` do SearXNG já entrega texto puro,
+  não precisa sanitizar nada do lado do `moto_mcp`), mas o risco
+  levantado foi resultado individual grande demais pro contexto do LLM.
+  Truncar perderia informação; paginar não. `pageno` é parâmetro nativo
+  do SearXNG — `mcp_server/websearch.py`/`tools.py` só repassam
+  `page` pra ele. Confirmado com dado real (não só teste com fake):
+  página 1 e página 2 da mesma busca trazem resultado **totalmente
+  diferente**, zero sobreposição, testado com a tool de verdade contra
+  o container rodando. 1 teste novo em `tests/test_websearch.py`
+  (`page` repassado como `pageno`). `103/103` testes passando.
+
+## Concluído (continuação 16)
+
+- [x] **Causa raiz #1 confirmada e corrigida: `qwen2.5-coder:14b` não
+  emite `tool_calls` estruturado neste Ollama.** Testado direto na API
+  do Ollama (`/v1/chat/completions` e `/api/chat`), comparando lado a
+  lado com `qwen3:14b` na mesma chamada exata: `qwen2.5-coder:14b`
+  sempre devolve `tool_calls: None` (a intenção de chamada vaza como
+  texto no `content`); `qwen3:14b` devolve `tool_calls` estruturado
+  corretamente, reproduzido várias vezes, inclusive com um conjunto de
+  10 tools realista (o tamanho real do `moto-mcp`). `opencode.json`
+  corrigido: `qwen3:14b` é o modelo declarado pra tool-calling;
+  `qwen2.5-coder:14b` continua no arquivo, documentado como "não usa
+  tool-calling neste Ollama — só pra código sem tool".
+- [x] **Causa raiz #2 identificada, não é bug do `moto_mcp`: o problema
+  restante é do OpenCode, não do modelo/Ollama.** Com `qwen3:14b`
+  dentro do OpenCode, pedindo pra listar as tools MCP disponíveis, o
+  modelo reporta uma lista que **nem inclui** as 13 tools do
+  `moto-mcp` — só tools nativas do OpenCode. Isolado o suficiente pra
+  descartar Ollama/modelo como causa (testes diretos na API confirmam
+  que funcionam com até 10 tools reais). O volume de tools + system
+  prompt que o OpenCode monta é maior que o testado isoladamente, e o
+  modelo local quantizado (`qwen3:14b`, Q4) não dá conta de raciocinar
+  certo sobre isso em modo `opencode run` (execução única). Não é algo
+  corrigível no `moto_mcp` — é limitação real de modelo local pequeno
+  com agente pesado, já citada como risco antes de virar fato
+  observado. Fica registrado como limitação conhecida, não bug aberto.
+
+## Concluído (continuação 17)
+
+- [x] **OpenCode + Ollama local + moto-mcp funcionando de ponta a
+  ponta, de verdade, confirmado com resposta real.** Três causas raiz
+  precisaram ser corrigidas juntas (a #1/#2 já registradas na
+  continuação 16 não eram suficientes sozinhas):
+  1. Modelo certo: `qwen3:14b` (não `qwen2.5-coder:14b`).
+  2. **`OLLAMA_CONTEXT_LENGTH=16384`** ao subir o Ollama (`ollama
+     serve`) — sem isso, o prompt (system prompt do OpenCode + tools)
+     estourava o contexto padrão e era truncado antes do modelo ver as
+     tools do `moto-mcp` (achado real, visto no log:
+     `"truncating input prompt" limit=2050 prompt=9040`).
+  3. **Agente customizado `moto`** em `opencode.json` (`"agent":
+     {"moto": {...}}`) — desliga tools nativas do OpenCode que não
+     precisamos (`bash`, `edit`, `write`, `task`, `todowrite`,
+     `webfetch`, `glob`, `grep`), reduzindo o tamanho do prompt e a
+     concorrência de opções pro modelo.
+  Achado extra relevante: as tools MCP aparecem pro modelo com o nome
+  **prefixado pelo servidor** (`moto-mcp_list_agents`, não
+  `list_agents` puro) — explica por que pedidos anteriores usando o
+  nome sem prefixo confundiam o modelo.
+  Teste real (`opencode run --agent moto --model ollama/qwen3:14b`,
+  pedindo pra chamar `list_agents`): chamou `moto-mcp_list_agents` de
+  verdade, trouxe os 7 agentes reais do repositório (Bill, Fred, Homes,
+  Levi, Mike, Mike Review, Red) com papel e arquivo corretos. Sem
+  truncamento em nenhuma das 3 chamadas do teste (`truncated = 0`).
+
+## Próximos passos (ordem sugerida)
+- [ ] Testar `search_semantic`/`reindex_search`/`compact_search_index` de
+  verdade, conectado num cliente MCP de verdade (ex: Claude Desktop,
+  não só via script/harness) — falta essa última confirmação de ponta a
+  ponta, com um agente de fato chamando essas tools numa conversa.
+- [x] **Conectividade de rede com dispositivo físico real, confirmada
+  (teste temporário fora do modelo de segurança).** Subido um processo
+  avulso (fora do repositório, sem tocar `network.py`) bindado no IP
+  da LAN (`192.168.15.19:8765`, não o do Tailscale) + regra temporária
+  de firewall (`New-NetFirewallRule`, removida depois). Celular na
+  mesma Wi-Fi acessou `http://192.168.15.19:8765/mcp` no navegador e
+  recebeu resposta JSON-RPC real do servidor (erro `-32600` esperado —
+  GET de navegador não completa o handshake streamable-http, mesma
+  classe de resposta que o `curl` já tinha mostrado antes; um cliente
+  MCP de verdade completaria a sessão normalmente). Prova que o
+  transporte de rede funciona ponta a ponta com dispositivo físico
+  real, não só localmente. **Isso não substitui nem valida o modo de
+  produção** (Tailscale-only, `ensure_safe_bind_host` intacto) — foi
+  deliberadamente um bypass temporário só pra este teste, revertido
+  depois (processo derrubado, regra de firewall removida, nenhum
+  arquivo do repositório alterado).
+- [ ] Ainda falta: testar o modo de rede com um **cliente MCP de
+  verdade** (não navegador) de outro dispositivo — o teste acima prova
+  conectividade de rede, não uma sessão MCP completa.
 
 ## Depois — troca de backend (validação da abstração)
 
@@ -257,8 +726,6 @@ passos.
 
 ## Pendências herdadas (não relacionadas a este plano)
 
-- `poetry run pytest -v` ainda não foi executado de verdade no
-  `mcp_server` (ver `projects/moto-mcp-framework-server.md`).
 - Execução de comandos neste computador a partir de uma sessão do Claude
   na nuvem (`device_bash`) está quebrada desde uma atualização do
   Windows de 8/set — bug conhecido, já sendo rastreado pela Anthropic
@@ -267,7 +734,5 @@ passos.
   rodar um comando de verdade aqui (poetry, pytest,
   `scripts/reindex.py`) precisa ser rodada manualmente por quem estiver
   no teclado, não por uma sessão na nuvem.
-- `.env.example` ainda não foi deletado do repositório (arquivo órfão,
-  sem função depois da simplificação do `config.py`).
 - Decidir se `projects/moto-mcp-server.md` (registro obsoleto do gateway de
   OCR) deve ser apagado ou mantido como está.

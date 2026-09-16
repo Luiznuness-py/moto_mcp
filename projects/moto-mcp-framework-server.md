@@ -152,9 +152,19 @@ não esconder avisos de verdade no futuro.
 - `README.md` (raiz) ganhou uma seção curta apontando pra
   `docs/mcp_server.md`, que tem os detalhes técnicos completos:
   modelo de segurança, tools, transporte, setup.
-- `docs/security_test_master_checklist.md` — checklist do `moto_mcp`
-  duplicado e adaptado (superfície de risco real é path
-  traversal/escopo de escrita, não rede — transporte é stdio local).
+- `docs/security_test_master_checklist.md` — criado pra seguir a
+  convenção descrita em `agents/red.md` ("todo sistema novo duplica o
+  checklist no próprio `docs/` no dia 1"), mas aplicada no lugar errado:
+  essa convenção é pra projetos NOVOS criados a partir do framework
+  (`clients/`/`projects/`), não pro `docs/` raiz do próprio moto_mcp, que
+  documenta o servidor em si. Resultado: ficou idêntico byte a byte a
+  `knowledge/security/security_test_master_checklist.md`, nunca
+  realmente adaptado apesar do que este changelog dizia antes. Achado
+  pela primeira rodada real de `scripts/verify_search.py` (2026-09-15) —
+  a pergunta "de onde vêm as práticas da checklist" não achava a seção
+  certa porque a busca ficava dividida entre as duas cópias idênticas.
+  Removido; `knowledge/security/security_test_master_checklist.md`
+  segue como a única fonte.
 
 **Removido (2026-09-14)**: `.env.example` e o suporte a arquivo `.env`
 em `config.py` — o Yuri questionou se ainda fazia sentido, e não fazia:
@@ -172,6 +182,25 @@ e `pydantic`). Os testes foram revisados manualmente linha a linha
 contra a implementação, mas isso é "smoke + revisão manual", não
 "testado" — rodar `poetry run pytest -v` localmente é o que confirma de
 verdade.
+
+**`sys.path.insert` manual removido de `server.py`/`scripts/*.py` (2026-09-15)**:
+os quatro pontos de entrada tinham um remendo de `sys.path.insert(0, raiz)`
+pra compensar `mcp_server` não ser instalado no venv (`package-mode = false`
+no `pyproject.toml`). Yuri apontou que isso é gambiarra, não solução — o
+fato de estar comentado/documentado não torna a escolha correta. Causa
+raiz corrigida: `package-mode = false` removido, `packages = [{include =
+"mcp_server"}]` adicionado, `poetry install` instala `mcp_server` em modo
+editable no venv. Com isso qualquer processo do venv acha o pacote via
+`site-packages`, independente de como o arquivo de entrada foi carregado —
+o remendo por arquivo deixou de ser necessário, em vez de só ficar melhor
+documentado. Validado de verdade nos três mecanismos de carregamento que
+motivaram o remendo original: `pytest` (81/81), `python -m
+mcp_server.server`, carregamento por caminho via `importlib` (mesmo
+mecanismo do `mcp dev`/MCP Inspector), e os três scripts (`reindex.py`,
+`ask.py`, `verify_search.py`) rodados diretos (`poetry run python
+scripts/reindex.py` etc.) da forma que antes exigia o hack. Bônus:
+`verify_search.py` deu 13/13 nessa rodada (a Q9, em aberto desde a
+continuação 7 do `to-do.md`, também passou).
 
 ## Pendências conhecidas
 - **P0**: rodar `poetry install --with dev && poetry run pytest` de

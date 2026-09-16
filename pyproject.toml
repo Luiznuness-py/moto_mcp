@@ -1,7 +1,7 @@
 [project]
 name = "moto-mcp"
 version = "0.1.0"
-description = "moto_mcp como servidor MCP: expõe o próprio repositório (regras, knowledge, agentes, projetos/clientes) como tools MCP — leitura aberta, escrita restrita a projects/ e clients/."
+description = "moto_mcp como servidor MCP: expõe o próprio repositório (regras, knowledge, agentes, projetos/clientes) como tools MCP — leitura aberta, escrita restrita a projects/, clients/ e profile/. Transporte stdio (local) ou streamable-http (rede, via Tailscale)."
 authors = [{name = "Yuri Motoshima", email = "yuri.motoshima@gmail.com"}]
 readme = "README.md"
 requires-python = ">=3.13,<4.0"
@@ -14,7 +14,15 @@ dependencies = [
 ]
 
 [tool.poetry]
-package-mode = false
+# package-mode = false foi removido: impedia o Poetry de instalar o
+# pacote mcp_server no venv, e isso era a causa raiz de precisar de
+# `sys.path.insert` manual em server.py e nos scripts/ pra achar o
+# módulo dependendo de como cada um era carregado (`-m`, MCP Inspector,
+# script direto). Com o pacote instalado em modo editable, qualquer
+# processo rodando neste venv acha `mcp_server` via site-packages, não
+# importa como o arquivo de entrada foi carregado — a causa raiz some,
+# não só o sintoma.
+packages = [{ include = "mcp_server" }]
 
 [dependency-groups]
 dev = ["pytest (>=8.0.0,<9.0.0)", "pytest-asyncio (>=0.25.0,<1.0.0)"]

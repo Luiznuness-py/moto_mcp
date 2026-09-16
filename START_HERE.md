@@ -13,7 +13,14 @@ contém identidade de empresa, cliente ou pessoa específica. Preencha `global/u
 4. Leia `global/commit_policy.md`.
 5. Leia `ecosystem/` quando a tarefa envolver a empresa, produto, clientes, infraestrutura
    ou deploy do usuário.
-6. Leia o arquivo em `projects/` quando a tarefa envolver um projeto específico.
+6. Leia o arquivo em `projects/` quando a tarefa envolver um projeto específico. Isto não
+   é só leitura: ao final de uma sessão que avançou de verdade nesse projeto (decisão
+   tomada, arquitetura mudou, integração nova validada), atualize `projects/<nome>.md`
+   seguindo a mesma estrutura (Repositório/Canonical remote, Memória vigente, Memória
+   obsoleta ou substituída, Apenas discutido ou proposto, Pendências e riscos,
+   Evidências). Registrar o trabalho só no `to-do.md`/changelog do próprio repositório do
+   projeto não é suficiente — a fonte central fica defasada se ninguém escrever de volta
+   aqui.
 7. Leia `knowledge/security/security_testing_baseline.md` quando a tarefa envolver
    segurança, testes adversariais, validação, pentest ou deploy seguro.
 8. Leia o arquivo em `clients/` quando a tarefa envolver um cliente específico.
@@ -42,6 +49,8 @@ Sempre que o usuário introduzir um projeto novo ou um cliente novo:
 - Antes de alterar repo, ler o código e respeitar padrão local.
 - Regra de negócio fica no backend/service, não sob responsabilidade do front.
 - Sem gambiarra, sem jeitinho, sem reaproveitar campo com outro significado.
+- Trabalho de verdade num projeto termina com `projects/<nome>.md` atualizado, não só com
+  o changelog do repositório individual do projeto.
 - Commit local somente quando solicitado ou quando o fluxo já autorizou; push somente
   com pedido explícito.
 - Política de atribuição em commit é definida pelo usuário em `global/commit_policy.md`

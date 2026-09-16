@@ -9,10 +9,10 @@
 # máquina específica.
 #
 # Sem suporte a arquivo .env de propósito: não há nenhum cenário real
-# de uso onde você precisaria sobrescrever REPO_ROOT (mover este pacote
-# pra fora do moto_mcp contradiz a razão de ele existir). Se algum dia
+# de uso que exija sobrescrever REPO_ROOT (mover este pacote pra fora
+# do moto_mcp contradiz a razão de ele existir). Pra o caso raro que
 # precisar mesmo assim, MOTO_MCP_REPO_ROOT como variável de ambiente
-# direta funciona — sem carregar arquivo .env que ninguém vai usar.
+# direta funciona — sem carregar arquivo .env de propósito geral.
 
 from pathlib import Path
 
@@ -115,6 +115,27 @@ class Settings(BaseSettings):
     # etc.) e é dado gerado, não fonte — por isso está em
     # IGNORED_DIR_NAMES acima e deveria estar no .gitignore.
     VECTOR_DB_PATH: Path = Field(default_factory=_default_vector_db_path)
+
+    # Endereço/porta do modo de rede (transporte streamable-http,
+    # mcp_server/server_network.py) — modo opcional, ao lado do stdio,
+    # pra outro dispositivo (fora desta máquina) se conectar. Sem
+    # padrão de propósito: NETWORK_HOST vazio força configuração
+    # explícita via MOTO_MCP_NETWORK_HOST (o IP da interface do
+    # Tailscale, formato 100.x.x.x) em vez de adivinhar ou cair num
+    # default que poderia expor a porta sem querer. Validado por
+    # mcp_server.network.ensure_safe_bind_host antes de subir o
+    # servidor — nunca aceita "0.0.0.0"/"::"/endereço fora da faixa do
+    # Tailscale (100.64.0.0/10). Ver docs/mcp_server.md, "Transporte de
+    # rede".
+    NETWORK_HOST: str = Field(default="")
+    NETWORK_PORT: int = Field(default=8765)
+
+    # Base URL da instância própria de SearXNG (ver docker-compose.yml
+    # na raiz — serviço `searxng`, standalone, não a instância do
+    # projeto n8n do usuário) usada pela tool search_web. Diferente do
+    # Ollama, não tem raciocínio de "0.0.0.0 quebra o cliente" aqui —
+    # SearXNG é só um HTTP GET comum, sem biblioteca cliente especial.
+    SEARXNG_BASE_URL: str = Field(default="http://127.0.0.1:8080")
 
 
 settings = Settings()

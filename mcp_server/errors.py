@@ -45,3 +45,15 @@ class EmbeddingProviderError(FrameworkServerError):
 class VectorStoreError(FrameworkServerError):
     """Falha no banco vetorial (pacote não instalado, tabela corrompida,
     etc.)."""
+
+
+class WebSearchError(FrameworkServerError):
+    """Falha ao consultar o SearXNG (instância fora do ar, resposta
+    inesperada, etc.)."""
+
+
+class UnsafeBindHostError(FrameworkServerError):
+    """O host configurado pro modo de rede (streamable-http) não é um
+    endereço da faixa do Tailscale (100.64.0.0/10) — inclui o caso de
+    não estar configurado (vazio) e o caso de ser um wildcard
+    ("0.0.0.0"/"::") que exporia a porta pra fora do Tailscale."""

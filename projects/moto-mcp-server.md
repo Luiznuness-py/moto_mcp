@@ -19,11 +19,12 @@
 Repositório original: `C:\Users\Pichau\Desktop\Projetos\moto_mcp\server` (removido).
 
 ## Papel (histórico)
-Gateway MCP standalone do MotoOCR (projeto `moto_ocr`, em
-`C:\Users\Pichau\Desktop\Projetos\moto_ocr`). Expõe OCR, classificação/
-estruturação de documento e administração de vocabulário como tools MCP,
-chamando a API REST já existente do `moto_ocr` — não tem acesso direto a
-banco, storage nem segredos de aplicação.
+Antes do servidor atual (`moto-mcp-framework-server`) existir, era este projeto que
+ocupava esse papel no repositório: gateway MCP standalone do MotoOCR (projeto
+`moto_ocr`, em `C:\Users\Pichau\Desktop\Projetos\moto_ocr`). Expõe OCR, classificação/
+estruturação de documento e administração de vocabulário como tools MCP, chamando a
+API REST já existente do `moto_ocr` — não tem acesso direto a banco, storage nem
+segredos de aplicação.
 
 Nasceu de uma revisão de segurança (2026-09-14) do gateway MCP embutido
 no `moto_ocr` (`mcp_gateway/`), que encontrou:

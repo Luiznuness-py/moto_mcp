@@ -20,10 +20,15 @@ Não armazene secrets neste repositório.
 
 Este repositório também **é** um servidor MCP — expõe seu próprio
 conteúdo (regras, knowledge, agentes, projetos, clientes) como tools
-MCP via stdio, com leitura aberta e escrita restrita a `projects/` e
-`clients/`. `pyproject.toml` e o pacote `mcp_server/` ficam na
-raiz. Detalhes, modelo de segurança e como configurar num cliente MCP:
-ver `docs/mcp_server.md`.
+MCP via stdio (uso na mesma máquina) ou streamable-http (outro
+dispositivo, via Tailscale), com leitura aberta e escrita restrita a
+`projects/`, `clients/` e `profile/`. `pyproject.toml` e o pacote
+`mcp_server/` ficam na raiz. Detalhes, modelo de segurança, transporte
+de rede e como configurar num cliente MCP: ver `docs/mcp_server.md`.
+
+Pra usar com um agente de terminal (OpenCode) e um modelo local (Ollama)
+ou de nuvem (Claude), sem precisar entender o servidor por dentro: ver
+`docs/guia_opencode.md` — passo a passo do zero.
 
 ## Licença
 

@@ -16,18 +16,16 @@
 # Pré-requisito: já ter rodado `poetry run python scripts/reindex.py`
 # pelo menos uma vez. Precisa do Ollama rodando (mesma coisa que
 # scripts/reindex.py e scripts/verify_search.py).
+#
+# mcp_server é instalado no venv em modo editable (ver [tool.poetry]
+# packages em pyproject.toml) — nenhum ajuste de sys.path é necessário.
 
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
-# Mesmo raciocínio do sys.path em scripts/reindex.py — ver o comentário
-# lá pro porquê completo (`package-mode = false` no pyproject.toml).
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from mcp_server.embeddings import OllamaEmbeddingProvider  # noqa: E402
-from mcp_server.vectorstore import LanceDBVectorStore  # noqa: E402
+from mcp_server.embeddings import OllamaEmbeddingProvider
+from mcp_server.vectorstore import LanceDBVectorStore
 
 TOP_K = 5
 PREVIEW_CHARS = 160

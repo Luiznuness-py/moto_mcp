@@ -18,6 +18,10 @@ force destrutivo, sem alvo externo sem autorização explícita.
 
 ## Fontes externas consultadas
 
+As práticas, prioridades e itens deste checklist não foram inventados do zero — vêm da
+consolidação dos seguintes padrões, guias e frameworks de segurança reconhecidos pela
+indústria, usados como referência externa ao montar cada domínio abaixo:
+
 OWASP WSTG/ASVS/API Security Top 10/Top 10/Cheat Sheets (Authentication, Session
 Management, XSS Prevention, SSRF Prevention), MITRE CWE Top 25/ATT&CK/CAPEC, NIST SP
 800-115/SSDF SP 800-218/Cybersecurity Framework 2.0, CIS Controls/Benchmarks, PortSwigger

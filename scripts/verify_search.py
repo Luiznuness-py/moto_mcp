@@ -21,19 +21,17 @@
 # isso este script não valida um score mínimo, só SE o chunk certo
 # aparece nos primeiros TOP_K resultados (por padrão 8) — é a ORDEM
 # relativa que importa, não o valor absoluto.
+#
+# mcp_server é instalado no venv em modo editable (ver [tool.poetry]
+# packages em pyproject.toml) — nenhum ajuste de sys.path é necessário.
 
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
-# Mesmo raciocínio do sys.path em scripts/reindex.py — ver o comentário
-# lá pro porquê completo (`package-mode = false` no pyproject.toml).
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from mcp_server.embeddings import OllamaEmbeddingProvider  # noqa: E402
-from mcp_server.vectorstore import LanceDBVectorStore  # noqa: E402
-from mcp_server.verification_questions import VERIFICATION_QUESTIONS  # noqa: E402
+from mcp_server.embeddings import OllamaEmbeddingProvider
+from mcp_server.vectorstore import LanceDBVectorStore
+from mcp_server.verification_questions import VERIFICATION_QUESTIONS
 
 TOP_K = 8
 
