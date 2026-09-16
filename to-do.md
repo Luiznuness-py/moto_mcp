@@ -916,6 +916,26 @@ todos corrigidos e testados:
   backend Postgres e confirmar que os resultados batem com os do LanceDB.
   Isso é o que prova que a abstração funcionou.
 
+## Concluído (continuação 24) — `docs/guia_opencode.md` ficou de fora da atualização de `.env`
+
+- [x] **Achado real do Yuri (perguntou "atualizou a documentação ou
+  ainda está com export?") — `docs/guia_opencode.md` tinha ficado de
+  fora** da rodada de `.env` (continuação 23). Testado antes de
+  "corrigir" pra não afirmar algo falso: pesquisa deu resultado
+  contraditório sobre o OpenCode carregar `.env` automaticamente
+  (issues abertas pedindo essa feature vs. um trecho dizendo que já
+  existe via Bun runtime). **Testado de verdade em vez de confiar na
+  pesquisa**: criado um `.env` só com
+  `MOTO_MCP_OPENCODE_OLLAMA_BASE_URL`, sem exportar nada, rodado
+  `opencode run` — **falhou** (`"/chat/completions" cannot be parsed
+  as a URL`, mesma falha de baseURL vazio). Confirma: o `.env` do
+  `moto_mcp` (lido pelo `mcp_server` em Python) e o
+  `{env:...}` do `opencode.json` (lido pelo processo do OpenCode) são
+  dois mecanismos diferentes — um não alimenta o outro. `docs/guia_opencode.md`
+  atualizado pra deixar isso explícito, mantendo `$env:` como a forma
+  correta pra essa variável específica (não é regressão, é o que já
+  funcionava). `135/135` testes passando.
+
 ## Pendências herdadas (não relacionadas a este plano)
 
 - Execução de comandos neste computador a partir de uma sessão do Claude

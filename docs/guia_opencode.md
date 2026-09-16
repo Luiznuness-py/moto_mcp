@@ -112,6 +112,16 @@ Essas variáveis valem só pra essa janela de terminal aberta. Se fechar e
 abrir de novo, precisa rodar de novo (ou configurar como variável de
 ambiente permanente do Windows, se preferir não repetir).
 
+**Isso não é o mesmo `.env` do `moto_mcp` (`docs/mcp_server.md`) —
+testado e confirmado que não funciona pra esta variável específica**:
+o `.env` na raiz do repo é lido pelo servidor Python (`mcp_server`),
+não pelo próprio OpenCode. `{env:MOTO_MCP_OPENCODE_OLLAMA_BASE_URL}`
+dentro do `opencode.json` só resolve a partir de variável de ambiente
+de verdade no processo — testei colocando só num `.env` (sem exportar)
+e o OpenCode falhou com `"/chat/completions" cannot be parsed as a
+URL` (a mesma falha de baseURL vazio). Use `$env:`/variável permanente
+do Windows mesmo pra esta variável específica.
+
 ## Passo 5 — subir o OpenCode
 
 Ainda na pasta do `moto_mcp`:
