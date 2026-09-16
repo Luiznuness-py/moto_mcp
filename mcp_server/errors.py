@@ -53,7 +53,9 @@ class WebSearchError(FrameworkServerError):
 
 
 class UnsafeBindHostError(FrameworkServerError):
-    """O host configurado pro modo de rede (streamable-http) não é um
-    endereço da faixa do Tailscale (100.64.0.0/10) — inclui o caso de
-    não estar configurado (vazio) e o caso de ser um wildcard
-    ("0.0.0.0"/"::") que exporia a porta pra fora do Tailscale."""
+    """O host/config do modo de rede (streamable-http) não bate com a
+    fronteira do modo escolhido (Settings.NETWORK_MODE:
+    "tailscale"/"lan"/"local") — inclui host vazio, wildcard
+    ("0.0.0.0"/"::"), host fora da faixa do modo, modo inválido, ou
+    (em modo "lan") token de autenticação ausente/curto demais. Ver
+    mcp_server/network.py, ensure_safe_bind_host."""

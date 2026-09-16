@@ -55,9 +55,14 @@ na maioria dos casos testados hoje.
 Se sua máquina não aguenta nem o perfil fraco (`qwen3:4b` + contexto
 `16384`), duas saídas sem exigir hardware nenhum:
 
-1. **Modelo gratuito de nuvem via OpenCode** (`opencode/big-pickle` ou
-   equivalente, contexto de 200k, zero custo) — o raciocínio roda fora
-   da sua máquina, você só precisa do cliente OpenCode leve.
+1. **Alternativa externa, validar antes de depender dela**: modelo
+   gratuito de nuvem hospedado pelo próprio OpenCode (ex:
+   `opencode/big-pickle`, contexto de 200k no momento em que isto foi
+   escrito) — o raciocínio roda fora da sua máquina, você só precisa
+   do cliente OpenCode leve. Não é garantia permanente (é um serviço de
+   terceiro, gratuito hoje, pode mudar sem aviso) — confirme
+   disponibilidade/preço atual em <https://opencode.ai> antes de
+   montar um fluxo que dependa disso.
 2. **Sem agente nenhum**: `scripts/ask.py` (busca semântica direto) ou
    `scripts/search_documents` via `read_document` manual — tira valor
    do `moto_mcp` sem precisar de LLM decidindo nada.
@@ -87,12 +92,24 @@ reconectar via SSH):
 
 ```bash
 ps aux | grep mcp_server.server_network
+
+# Modo tailscale/local (sem token configurado):
 curl -s -o /dev/null -w "%{http_code}\n" http://<ip>:8765/mcp
+
+# Modo lan (token sempre obrigatório) — sem o header, o esperado é 401,
+# não é erro nem sinal de que caiu:
+curl -s -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer <seu-token>" http://<ip>:8765/mcp
 ```
 
-`406` = está de pé (é o comportamento correto de um `GET` simples, não
-é erro). Sem resposta/conexão recusada = caiu, precisa subir de novo
-com o mesmo comando acima.
+`406` = está de pé, e (em modo `lan`) a autenticação também passou —
+é o comportamento correto de um `GET` simples não completar o
+handshake do protocolo, não é erro. **Em modo `lan`, testar sem o
+header `Authorization` dá `401` de propósito** (confirmado testando de
+verdade) — isso prova que a autenticação está funcionando, não que o
+servidor caiu; só use o teste sem header pra confirmar que está *bloqueando*
+acesso indevido, nunca como teste de "está no ar". Sem resposta/conexão
+recusada = caiu de verdade, precisa subir de novo com o mesmo comando
+de antes.
 
 **Se cair sozinho** (reboot da VPS, processo morreu): não tem
 reinício automático nessa abordagem simples — é rodar o comando de

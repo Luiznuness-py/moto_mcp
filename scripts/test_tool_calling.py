@@ -163,7 +163,7 @@ def main() -> None:
         ("Preciso saber quais agentes existem nesse repositorio. Use a ferramenta adequada.", "list_agents"),
     ]
 
-    print(f"Testando '{args.model}' em {args.host} — {len(_TOOLS)} tools disponíveis (mesmo conjunto real do moto_mcp).\n")
+    print(f"Testando '{args.model}' em {args.host} — {len(_TOOLS)} tools disponíveis (subconjunto representativo do moto_mcp, ver aviso no topo do script).\n")
 
     all_passed = True
     for prompt, expected in cases:

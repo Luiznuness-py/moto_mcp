@@ -181,8 +181,10 @@ máquina, sem mudança), o `moto_mcp` também sobe via **Streamable
 HTTP**, pra outro dispositivo (ex: outro computador rodando OpenCode)
 se conectar sem copiar o repositório. Mesmo padrão já usado pelo
 gateway MCP do `moto_ocr` (`mcp.streamable_http_app()` + `uvicorn`).
-Sem dependência nova: `starlette`/`uvicorn` já vêm como dependência
-transitiva de `mcp[cli]`.
+`starlette`/`uvicorn` já eram dependência transitiva de `mcp[cli]` —
+agora também declarados direto em `pyproject.toml` (mesmo piso de
+versão), já que este servidor os usa como contrato próprio
+(`uvicorn.run`, `BaseHTTPMiddleware`), não só de passagem.
 
 ### Três modos — `MOTO_MCP_NETWORK_MODE`
 

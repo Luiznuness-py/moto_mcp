@@ -825,6 +825,33 @@ todos corrigidos e testados:
   verdade** (não navegador) de outro dispositivo — o teste acima prova
   conectividade de rede, não uma sessão MCP completa.
 
+## Concluído (continuação 21) — segunda rodada de correções de revisão
+
+- [x] **P2 — exemplo de `curl` do `docs/guia_maquina_fraca.md` estava
+  errado pro modo `lan`.** Mandava testar sem header `Authorization` e
+  dizia que `406` = "está de pé" — em modo `lan` (token obrigatório),
+  **testado de verdade agora**: sem header dá `401` (autenticação
+  funcionando, não é falha), só com o header certo chega no `406`
+  esperado. Corrigido o guia pra separar os dois casos (tailscale/local
+  sem token vs. lan com token) e explicar que `401` sem header é sinal
+  de que a auth está funcionando, não de que o servidor caiu.
+- [x] **P2 — `scripts/test_tool_calling.py` dizia "mesmo conjunto real
+  do moto_mcp" na mensagem impressa**, contradizendo o aviso logo no
+  topo do próprio arquivo ("subconjunto representativo"). Corrigido
+  pra "subconjunto representativo", consistente com o aviso.
+- [x] **P3 — docstring de `UnsafeBindHostError` desatualizada**
+  (ainda falava só de Tailscale) — corrigida pra descrever os três
+  modos e a checagem de token.
+- [x] **P3 — `docs/mcp_server.md` dizia "sem dependência nova"** pra
+  `starlette`/`uvicorn`, desatualizado desde que passaram a ser
+  declarados diretos no `pyproject.toml` (continuação 20). Corrigido.
+- [x] **P3 — promessa de "zero custo" do `opencode/big-pickle`
+  suavizada** — agora deixa explícito que é serviço de terceiro,
+  gratuito "no momento em que isto foi escrito", não garantia
+  permanente; orienta confirmar disponibilidade antes de montar fluxo
+  que dependa disso.
+  `133/133` testes passando.
+
 ## Depois — troca de backend (validação da abstração)
 
 - [ ] Instalar `pgvector` no Postgres já existente + pacotes Python
