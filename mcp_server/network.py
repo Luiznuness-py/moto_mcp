@@ -48,6 +48,12 @@ _LOCAL_ADDRESSES = (
 
 _VALID_MODES = ("tailscale", "lan", "local")
 
+# Não é força de senha de verdade (entropia, dicionário etc.) — é só um
+# piso pra pegar erro bobo tipo MOTO_MCP_AUTH_TOKEN=1. 32 caracteres é o
+# tamanho de um `secrets.token_hex(16)` (o menor gerador recomendado nos
+# exemplos deste repo já produz 64).
+_MIN_TOKEN_LENGTH = 32
+
 
 def ensure_safe_bind_host(host: str, mode: str, auth_token: str = "") -> None:
     """Levanta UnsafeBindHostError se `host` não bater com a fronteira
@@ -110,4 +116,12 @@ def ensure_safe_bind_host(host: str, mode: str, auth_token: str = "") -> None:
             '(`python -c "import secrets; print(secrets.token_hex(32))"`) '
             "e configure antes de subir. Ver docs/mcp_server.md, "
             "'Transporte de rede'."
+        )
+    if len(auth_token) < _MIN_TOKEN_LENGTH:
+        raise UnsafeBindHostError(
+            f"MOTO_MCP_AUTH_TOKEN tem {len(auth_token)} caractere(s) — "
+            f"mínimo exigido: {_MIN_TOKEN_LENGTH}. Não é RBAC/JWE, é só "
+            "uma trava contra token fraco por engano (ex: '1', 'senha'). "
+            'Gere um de verdade: `python -c "import secrets; '
+            'print(secrets.token_hex(32))"`.'
         )

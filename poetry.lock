@@ -188,7 +188,6 @@ description = "Composable command line interface toolkit"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "sys_platform != \"emscripten\""
 files = [
     {file = "click-8.5.0-py3-none-any.whl", hash = "sha256:255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360"},
     {file = "click-8.5.0.tar.gz", hash = "sha256:ba0d2089de75ea0310e2dde03160e6ca10009947fb95a182f9b54021bb272e34"},
@@ -1396,7 +1395,6 @@ description = "The lightning-fast ASGI server."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "sys_platform != \"emscripten\""
 files = [
     {file = "uvicorn-0.53.0-py3-none-any.whl", hash = "sha256:e8dca71ec86dce5f04e333f0d56cdedf942446e6643b9cea1af0d6d3a02cb03e"},
     {file = "uvicorn-0.53.0.tar.gz", hash = "sha256:a9356f0cb89b3b8621529c5d5eebd69bfe154f4c3f68b4cf2de47e45fa855c2e"},
@@ -1412,4 +1410,4 @@ standard = ["httptools (>=0.8.0)", "python-dotenv (>=0.13)", "pyyaml (>=5.1)", "
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<4.0"
-content-hash = "270c664def6baf4dac2268b92eac82e140298d2f9ae5a22dc6f2d2f5132419e9"
+content-hash = "19aca12869a11d881408e0b9923f55f1f69d163124034b94bff2f9ffec1d0ff8"

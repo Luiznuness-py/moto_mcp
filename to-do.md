@@ -770,6 +770,36 @@ passos.
   menciona os três modos de rede, não só Tailscale.
   `128/128` testes passando depois de tudo.
 
+## Concluído (continuação 20) — correções de revisão externa
+
+Achados de uma revisão (não desta sessão) sobre a continuação 19,
+todos corrigidos e testados:
+
+- [x] **P1 — `uvicorn`/`starlette`/`httpx` declarados direto no
+  `pyproject.toml`**, não só transitivos via `mcp[cli]`. Piso de
+  versão igual ao que `mcp[cli]` já exige hoje (`poetry show`), não
+  inventado. `poetry lock` regenerado — sem mudança de versão
+  resolvida (já estavam nesses valores via transitiva), só passaram a
+  aparecer como dependência direta.
+- [x] **P2 — token de LAN com piso mínimo de tamanho.**
+  `ensure_safe_bind_host` recusa `MOTO_MCP_AUTH_TOKEN` com menos de 32
+  caracteres em modo `lan` (constante `_MIN_TOKEN_LENGTH` em
+  `mcp_server/network.py`) — não é força de senha de verdade
+  (entropia/dicionário), só trava erro bobo tipo `AUTH_TOKEN=1`. 5
+  testes novos (`tests/test_network.py`).
+- [x] **P2 — contradição entre `guia_maquina_fraca.md` e
+  `guia_opencode.md` sobre `qwen3:8b` corrigida.** `guia_opencode.md`
+  não repete mais a tabela de perfis — aponta pra
+  `docs/guia_maquina_fraca.md` como única fonte, evitando desalinhar
+  de novo no futuro.
+- [x] **P2 — `opencode.json` atualizado** com os perfis confirmados
+  (`qwen3:4b`, `qwen3:8b`) declarados no provider `ollama`, não só
+  `qwen3:14b`. Validado com `opencode models` — os 4 aparecem
+  corretamente.
+- [x] **P3 — descrição do `pyproject.toml` corrigida**: não fala mais
+  só "via Tailscale", menciona os três modos.
+  `133/133` testes passando.
+
 ## Próximos passos (ordem sugerida)
 - [ ] Testar `search_semantic`/`reindex_search`/`compact_search_index` de
   verdade, conectado num cliente MCP de verdade (ex: Claude Desktop,

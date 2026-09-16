@@ -55,17 +55,13 @@ opencode --version
 
 1. Baixe e instale o Ollama em <https://ollama.com>.
 2. Baixe um modelo com suporte a "tool calling" (chamar ferramentas) —
-   é isso que faz ele conseguir usar as tools do `moto_mcp`.
-   **Confirmado funcionando de ponta a ponta**: `qwen3:14b`.
-   **Confirmado que NÃO funciona** (mesmo sendo anunciado como
-   "tool-capable"): `qwen2.5-coder:14b` — não emite chamada de tool
-   estruturada neste Ollama, testado e comparado lado a lado.
+   é isso que faz ele conseguir usar as tools do `moto_mcp`. Perfis
+   testados de ponta a ponta, computador razoável até fraco — tabela
+   completa e atualizada em **`docs/guia_maquina_fraca.md`**, não
+   repetida aqui pra não desalinhar de novo:
    ```powershell
    ollama pull qwen3:14b
    ```
-   (modelo menor se seu computador for mais limitado:
-   `ollama pull qwen3:8b` — menos preciso, mas mais leve. Ainda não
-   testado nesse tamanho.)
 3. **Suba o Ollama com contexto maior que o padrão** — sem isso, o
    prompt (instruções do OpenCode + as tools nativas + as tools do
    `moto_mcp`) é cortado antes do modelo ver as tools, e nada funciona

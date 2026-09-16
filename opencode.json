@@ -14,8 +14,14 @@
         "baseURL": "{env:MOTO_MCP_OPENCODE_OLLAMA_BASE_URL}"
       },
       "models": {
+        "qwen3:4b": {
+          "name": "Qwen3 4b (perfil fraco, confirmado de ponta a ponta — OLLAMA_CONTEXT_LENGTH=16384; ver docs/guia_maquina_fraca.md)"
+        },
+        "qwen3:8b": {
+          "name": "Qwen3 8b (perfil fraco/medio, confirmado de ponta a ponta — OLLAMA_CONTEXT_LENGTH=16384; ver docs/guia_maquina_fraca.md)"
+        },
         "qwen3:14b": {
-          "name": "Qwen3 14b (editar aqui pro modelo baixado no Ollama — confirmado com tool-calling funcionando via Ollama; ver docs/mcp_server.md)"
+          "name": "Qwen3 14b (perfil medio, confirmado — OLLAMA_CONTEXT_LENGTH=32768, ~95% de VRAM numa GPU de 16GB; ver docs/guia_maquina_fraca.md)"
         },
         "qwen2.5-coder:14b": {
           "name": "Qwen2.5 Coder 14b (NAO usa tool-calling neste Ollama — confirmado que nao emite tool_calls estruturado; bom so pra tarefa de codigo sem precisar das tools do moto-mcp)"

@@ -48,21 +48,32 @@ class TestModeLocal:
         ensure_safe_bind_host("127.0.0.1", "local", auth_token="")
 
 
+_VALID_LAN_TOKEN = "a" * 32  # so precisa bater o piso de tamanho pro teste
+
+
 class TestModeLan:
     @pytest.mark.parametrize(
         "host",
         ["192.168.1.10", "10.0.0.5", "172.16.0.1", "172.31.255.254", "169.254.1.1"],
     )
     def test_accepts_private_ranges_with_token(self, host):
-        ensure_safe_bind_host(host, "lan", auth_token="algum-token-gerado")
+        ensure_safe_bind_host(host, "lan", auth_token=_VALID_LAN_TOKEN)
 
     @pytest.mark.parametrize("host", ["", "0.0.0.0", "::", "8.8.8.8", "100.64.0.1", "not-an-ip"])
     def test_rejects_hosts_outside_lan_ranges(self, host):
         with pytest.raises(UnsafeBindHostError):
-            ensure_safe_bind_host(host, "lan", auth_token="algum-token-gerado")
+            ensure_safe_bind_host(host, "lan", auth_token=_VALID_LAN_TOKEN)
 
     def test_requires_token_even_with_valid_lan_host(self):
         # Garantia central deste modo: LAN sem token nao sobe, mesmo com
         # host valido.
         with pytest.raises(UnsafeBindHostError):
             ensure_safe_bind_host("192.168.1.10", "lan", auth_token="")
+
+    @pytest.mark.parametrize("token", ["", "1", "curto", "a" * 31])
+    def test_rejects_token_shorter_than_minimum(self, token):
+        with pytest.raises(UnsafeBindHostError):
+            ensure_safe_bind_host("192.168.1.10", "lan", auth_token=token)
+
+    def test_accepts_token_at_exact_minimum_length(self):
+        ensure_safe_bind_host("192.168.1.10", "lan", auth_token="a" * 32)
