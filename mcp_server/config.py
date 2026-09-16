@@ -130,6 +130,25 @@ class Settings(BaseSettings):
     NETWORK_HOST: str = Field(default="")
     NETWORK_PORT: int = Field(default=8765)
 
+    # Qual fronteira de rede o modo de rede aceita — "tailscale" (padrão,
+    # só IP da faixa 100.64.0.0/10), "lan" (rede local/doméstica,
+    # 10.0.0.0/8 + 172.16.0.0/12 + 192.168.0.0/16) ou "local" (só
+    # 127.0.0.1/::1, mesma máquina). Ver mcp_server/network.py pra a
+    # validação de verdade — este campo só seleciona qual regra usar.
+    # Padrão "tailscale" de propósito: é a fronteira com autenticação de
+    # dispositivo de verdade (WireGuard); mudar pra "lan" é escolha
+    # explícita do usuário, não default.
+    NETWORK_MODE: str = Field(default="tailscale")
+
+    # Token Bearer opcional (obrigatório em modo "lan" — ver
+    # mcp_server/network.py, ensure_safe_bind_host). Tailscale já
+    # autentica o dispositivo; LAN não autentica nada sozinha, então
+    # exige isso pra não virar acesso livre pra qualquer coisa na rede
+    # de casa. Nunca tem valor padrão — precisa ser gerado e setado
+    # explicitamente (ex: `python -c "import secrets;
+    # print(secrets.token_hex(32))"`).
+    AUTH_TOKEN: str = Field(default="")
+
     # Base URL da instância própria de SearXNG (ver docker-compose.yml
     # na raiz — serviço `searxng`, standalone, não a instância do
     # projeto n8n do usuário) usada pela tool search_web. Diferente do
