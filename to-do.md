@@ -718,6 +718,58 @@ passos.
   refletir isso — sem `--agent moto`, `OLLAMA_CONTEXT_LENGTH=32768`,
   aviso explícito sobre a margem apertada de VRAM.
 
+## Concluído (continuação 19) — backlog de 8 itens (ecossistema leve/pessoal)
+
+- [x] **Modo LAN oficial, sem exigir Tailscale.**
+  `Settings.NETWORK_MODE` (`tailscale`/`lan`/`local`) +
+  `mcp_server/network.py` reescrito pra validar a fronteira certa por
+  modo. `tailscale` continua igual (só faixa `100.64.0.0/10`); `lan`
+  aceita `10.0.0.0/8`/`172.16.0.0/12`/`192.168.0.0/16`/
+  `169.254.0.0/16`; `local` só `127.0.0.1`/`::1`. `0.0.0.0`/`::` nunca
+  aceito em nenhum modo. Testado de verdade em modo `lan` (bind real
+  no IP da LAN, resposta HTTP confirmada).
+- [x] **Token Bearer obrigatório em modo LAN.** Novo
+  `mcp_server/auth.py` (`BearerTokenMiddleware`, comparação de tempo
+  constante) — montado em `server_network.py` só quando
+  `MOTO_MCP_AUTH_TOKEN` está configurado; `ensure_safe_bind_host`
+  recusa subir em modo `lan` sem token (fail-closed). Testado de
+  ponta a ponta: sem token → `401`, token errado → `401`, token certo
+  → passa da autenticação. `tests/test_auth.py` (3 casos).
+- [x] **Perfis de modelo/contexto documentados com dado real**, não
+  estimativa — `docs/guia_maquina_fraca.md` novo. `qwen3:4b`/`qwen3:8b`
+  (contexto `16384`) e `qwen3:14b` (contexto `32768`, ressalva de VRAM)
+  confirmados de ponta a ponta dentro do OpenCode real.
+  `qwen2.5-coder:14b` e `mistral-nemo:12b` testados e reprovados
+  (registrados pra ninguém perder tempo tentando de novo). Perfil
+  "forte" (30B+) fica como futuro, não testado.
+- [x] **`scripts/test_tool_calling.py`** — testa se um modelo do
+  Ollama faz tool-calling estruturado de verdade (mesmo conjunto
+  representativo de 10 tools usado nos testes manuais desta sessão).
+  Validado reproduzindo os dois resultados já conhecidos: `qwen3:4b`
+  passa, `qwen2.5-coder:14b` falha com o mesmo vazamento de JSON que
+  já tínhamos visto manualmente. Aviso explícito no próprio script:
+  passar aqui não garante funcionar dentro do OpenCode de verdade
+  (`mistral-nemo:12b` é o exemplo real disso — não foi testado
+  isolado antes de existir este script, mas seria um caso de alerta
+  pra não confiar cegamente no resultado isolado).
+- [x] **`docs/guia_maquina_fraca.md`** cobre também os itens 5 e 6 do
+  backlog: como perceber contexto insuficiente (sinais reais
+  observados nesta sessão — tool "não disponível", resposta vazia,
+  tool inventada sem o indicador `⚙` de execução real), quando evitar
+  OpenCode pesado (modelo gratuito de nuvem via OpenCode, ou uso sem
+  agente nenhum via `scripts/ask.py`), e deploy persistente simples
+  (`nohup`/`disown` em terminal, sem systemd/Podman — decisão explícita
+  do Yuri de manter simples).
+- [x] **`projects/moto-mcp-framework-server.md` atualizado** — a
+  decisão antiga "stdio, não streamable-http" estava desatualizada
+  desde a continuação 11; corrigida pra refletir os três modos atuais.
+  Pendências resolvidas (pytest, poetry.lock, teste com cliente MCP
+  real) tiradas da lista de pendências.
+- [x] **Ajustes de consistência**: "12 tools" → "13 tools" nos
+  comentários de `mcp_server/server.py`/`server_network.py`. `README.md`
+  menciona os três modos de rede, não só Tailscale.
+  `128/128` testes passando depois de tudo.
+
 ## Próximos passos (ordem sugerida)
 - [ ] Testar `search_semantic`/`reindex_search`/`compact_search_index` de
   verdade, conectado num cliente MCP de verdade (ex: Claude Desktop,

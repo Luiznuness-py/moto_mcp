@@ -14,7 +14,7 @@
 # aqui: só têm efeito quando o transporte é "streamable-http", nunca no
 # stdio deste módulo. Passados no construtor porque FastMCP lê
 # host/port de lá, não do run() — ver mcp_server/server_network.py, que
-# importa este mesmo `mcp` (mesmas 12 tools, sem duplicar registro) e
+# importa este mesmo `mcp` (mesmas 13 tools, sem duplicar registro) e
 # sobe com o outro transporte.
 
 from mcp.server.fastmcp import FastMCP

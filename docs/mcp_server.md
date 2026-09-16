@@ -184,54 +184,83 @@ gateway MCP do `moto_ocr` (`mcp.streamable_http_app()` + `uvicorn`).
 Sem dependência nova: `starlette`/`uvicorn` já vêm como dependência
 transitiva de `mcp[cli]`.
 
-### Modelo de segurança deste modo
+### Três modos — `MOTO_MCP_NETWORK_MODE`
 
-**O Tailscale é a fronteira de confiança — não há autenticação própria
-(sem token/Bearer).** O servidor recusa subir (`UnsafeBindHostError`)
-se `MOTO_MCP_NETWORK_HOST` não for um endereço da faixa do Tailscale
-(`100.64.0.0/10`) — nunca sobe em `0.0.0.0`, `::`, ou IP de LAN/rede
-pública, mesmo por engano de configuração (`mcp_server/network.py`,
-`ensure_safe_bind_host`, coberto por `tests/test_network.py`).
+Cada modo tem uma fronteira de host diferente, validada por
+`mcp_server/network.py` (`ensure_safe_bind_host`, coberto por
+`tests/test_network.py`) antes mesmo do socket abrir:
 
-Isso significa: **qualquer dispositivo já aprovado no seu tailnet, que
-alcançar essa porta, tem acesso total** às 13 tools (leitura do
-repositório inteiro, escrita em `projects/clients/profile`) — sem
-RBAC por dispositivo. Decisão aceitável enquanto for só dispositivo do
-próprio usuário (mesmo modelo de risco aceito documentado no pentest
-do `moto_ocr` pro gateway dele, enquanto era single-consumer — ver
-`to-do.md`). Se algum dia um consumidor fora do seu controle precisar
-alcançar essa porta, isso vira bloqueante — aí sim faz sentido uma
-camada de autenticação própria (bearer token está registrado como
-opção, não implementada).
+| Modo | Fronteira de host aceita | Autenticação |
+|---|---|---|
+| `tailscale` (padrão) | só `100.64.0.0/10` (interface do Tailscale) | Tailscale já autentica o dispositivo (WireGuard) — token Bearer opcional |
+| `lan` | `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16` (rede doméstica) | **Token Bearer obrigatório** — LAN não autentica ninguém sozinha; sem `MOTO_MCP_AUTH_TOKEN`, o servidor recusa subir |
+| `local` | só `127.0.0.1`/`::1` (mesma máquina) | Token opcional |
+
+Em qualquer modo, `0.0.0.0`/`::`/wildcard nunca é aceito, mesmo por
+engano de configuração.
+
+**Por que `lan` exige token e `tailscale` não**: o Tailscale já resolve
+autenticação de dispositivo — só quem você aprovou explicitamente no
+tailnet alcança a porta. LAN não tem isso — qualquer coisa na mesma
+rede de casa (ou de um Wi-Fi compartilhado) alcançaria leitura do
+repositório inteiro e escrita em `projects/clients/profile` sem
+barreira nenhuma. `mcp_server/auth.py`
+(`BearerTokenMiddleware`) fecha essa lacuna com um segredo
+compartilhado simples — sem JWE/tenant/scope como o `moto_ocr` tem,
+porque o `moto_mcp` não tem esse conceito (é servidor pessoal de um
+usuário só).
+
+Validado de ponta a ponta, em modo `lan` de verdade: sem token → `401`;
+token errado → `401`; token certo → passa da autenticação.
 
 ### Como rodar
+
+**Modo `tailscale`** (padrão, recomendado quando o dispositivo remoto
+já está no seu tailnet):
 
 ```bash
 tailscale ip -4    # confirma o IP desta máquina no tailnet, ex: 100.70.89.100
 
 cd C:\Users\Pichau\Desktop\Projetos\moto_mcp
-$env:MOTO_MCP_NETWORK_HOST = "100.70.89.100"   # PowerShell; no Git Bash: export MOTO_MCP_NETWORK_HOST=100.70.89.100
+$env:MOTO_MCP_NETWORK_HOST = "100.70.89.100"
+poetry run python -m mcp_server.server_network
+```
+
+**Modo `lan`** (sem Tailscale — rede doméstica direta):
+
+```bash
+cd C:\Users\Pichau\Desktop\Projetos\moto_mcp
+python -c "import secrets; print(secrets.token_hex(32))"   # gera o token
+
+$env:MOTO_MCP_NETWORK_MODE = "lan"
+$env:MOTO_MCP_NETWORK_HOST = "192.168.1.10"   # IP da sua máquina na rede local
+$env:MOTO_MCP_AUTH_TOKEN = "o token gerado acima"
 poetry run python -m mcp_server.server_network
 ```
 
 Porta padrão `8765` (`MOTO_MCP_NETWORK_PORT` pra trocar). No cliente MCP
 do outro dispositivo (ex: OpenCode, `opencode.json`), registre como
-servidor remoto:
+servidor remoto — em modo `lan`, inclua o header `Authorization`:
 
 ```json
 {
   "mcp": {
     "moto-mcp": {
       "type": "remote",
-      "url": "http://100.70.89.100:8765/mcp"
+      "url": "http://192.168.1.10:8765/mcp",
+      "headers": { "Authorization": "Bearer o-token-gerado" }
     }
   }
 }
 ```
 
-Validado de ponta a ponta: servidor sobe, bind confirmado no IP do
-Tailscale (log do uvicorn), responde HTTP real na porta — e recusa
-subir com `MOTO_MCP_NETWORK_HOST` vazio, `0.0.0.0` ou IP de LAN comum.
+(Em modo `tailscale`, se não configurou `MOTO_MCP_AUTH_TOKEN`, o campo
+`headers` acima não é necessário.)
+
+Validado de ponta a ponta: servidor sobe, bind confirmado no IP
+correto pro modo escolhido (log do uvicorn), responde HTTP real na
+porta — e recusa subir com host vazio, `0.0.0.0`, host fora da faixa
+do modo escolhido, ou (em modo `lan`) sem token configurado.
 
 ## Busca web (SearXNG)
 

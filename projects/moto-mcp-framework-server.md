@@ -50,8 +50,12 @@ etapa (marcado como obsoleto).
 - **`register_entry` valida as seções passadas contra o template real**
   antes de escrever — uma chave com nome errado dá erro claro em vez de
   silenciosamente virar uma seção vazia.
-- **Transporte stdio, não streamable-http**: decisão explícita do Yuri
-  — sem porta de rede, sem autenticação pra pensar.
+- **Transporte stdio por padrão, streamable-http como modo adicional
+  (não substitui)**: decisão original era só stdio, sem porta de rede
+  — revista em 2026-09-16 com a adição do modo de rede (ver
+  "Atualização" mais abaixo). Continua sem autenticação obrigatória no
+  modo padrão (Tailscale já autentica o dispositivo); ganhou token
+  Bearer obrigatório especificamente pro modo `lan`.
 
 ## Stack
 Python `>=3.13,<4.0`, Poetry (`package-mode = false`), `mcp[cli]`
@@ -202,13 +206,34 @@ scripts/reindex.py` etc.) da forma que antes exigia o hack. Bônus:
 `verify_search.py` deu 13/13 nessa rodada (a Q9, em aberto desde a
 continuação 7 do `to-do.md`, também passou).
 
+## Atualização (transporte de rede, modelos pequenos, SearXNG — 2026-09-16)
+
+**Resolvido desde a última atualização deste arquivo** (os P0 de baixo
+já não são pendência):
+- `poetry run pytest` roda de verdade neste computador — 128/128 na
+  contagem mais recente (81 originais + rede + startup + busca web +
+  auth). `poetry.lock` existe e está commitado.
+- Configurado e testado com cliente MCP real (OpenCode) — não só
+  Claude Desktop. `opencode mcp list` conecta, tools chamadas de
+  verdade com dado real do repositório retornando.
+- Modo de rede ganhou três variantes (`MOTO_MCP_NETWORK_MODE`):
+  `tailscale` (padrão, como antes), `lan` (rede doméstica, exige
+  `MOTO_MCP_AUTH_TOKEN` — `mcp_server/auth.py`,
+  `BearerTokenMiddleware`) e `local` (só loopback). Ver
+  `docs/mcp_server.md`, "Transporte de rede".
+- Nova tool `search_web` (13ª tool) via instância própria de SearXNG
+  (Podman, não Docker — `docker-compose.yml`).
+- Reindexação automática no startup (`mcp_server/startup.py`) — quem
+  clona não precisa lembrar de rodar `scripts/reindex.py` na mão.
+- `scripts/test_tool_calling.py` — testa se um modelo do Ollama faz
+  tool-calling estruturado de verdade, antes de confiar nele.
+- Perfis de modelo testados de ponta a ponta (não estimativa): `qwen3:4b`
+  e `qwen3:8b` (contexto `16384`) e `qwen3:14b` (contexto `32768`,
+  ressalva de VRAM apertada em GPU de 16GB) — ver
+  `docs/guia_maquina_fraca.md`. `qwen2.5-coder:14b` e `mistral-nemo:12b`
+  testados e reprovados (não fazem tool-calling confiável aqui).
+
 ## Pendências conhecidas
-- **P0**: rodar `poetry install --with dev && poetry run pytest` de
-  verdade localmente e confirmar os testes passando.
-- **P0**: gerar e comitar `poetry.lock`.
-- Configurar este servidor num cliente MCP real (Claude Desktop ou
-  equivalente) e testar as tools manualmente — nada disso foi exercitado
-  de ponta a ponta ainda, só revisado no código.
 - P2: sem lock de arquivo — duas escritas concorrentes no mesmo
   documento (`register_entry`/`replace_section`) podem colidir. Baixo
   risco em uso local de um agente por vez, mas não tratado.
@@ -216,17 +241,11 @@ continuação 7 do `to-do.md`, também passou).
   criar (com `overwrite`) e editar seção.
 - Decidir se `projects/moto-mcp-server.md` (registro histórico do
   gateway de OCR removido) deve continuar existindo como está marcado
-  agora (obsoleto, mantido só como referência) ou se o Yuri prefere que
-  eu apague o conteúdo por completo — não consigo deletar o arquivo
-  neste momento (ver nota abaixo sobre limitação de ferramenta).
-- Nada foi commitado/enviado para o Git do usuário — só escrito no
-  repositório local. Commit/push só acontece se o Yuri pedir
-  explicitamente (`global/commit_policy.md`).
-
-## Nota operacional (não é sobre o projeto, é sobre esta sessão)
-Não consegui excluir arquivos/pastas no dispositivo do Yuri nesta
-sessão — a ferramenta de shell remoto está com um bug conhecido do
-Windows (update de 8/set bloqueando o acesso). Por isso a antiga pasta
-`framework_mcp/` (se ainda existir) e `projects/moto-mcp-server.md`
-precisam ser removidos manualmente pelo Yuri, se ele quiser — eu só
-consigo sobrescrever/criar arquivo, não apagar.
+  agora (obsoleto, mantido só como referência) ou ser apagado — ainda
+  em aberto, sem decisão.
+- Perfil "forte" (modelo maior, 30B+) da tabela de perfis ainda não
+  testado — registrado como futuro em `docs/guia_maquina_fraca.md`.
+- Item do backlog ainda não feito: guia inteligente completo de deploy
+  persistente (rodando informalmente, `nohup`/`disown`, documentado em
+  `docs/guia_maquina_fraca.md` — considerado suficiente por ora, sem
+  reinício automático de verdade).
