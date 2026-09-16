@@ -1,5 +1,10 @@
 # Guia rápido — instalar, configurar e rodar buscas
 
+Para OpenCode + Ollama + MCP remotos, consulte o
+[procedimento comprovado em 2026-09-16](diagnostico_opencode_remoto.md)
+e o exemplo `opencode/opencode.remote.example.json`. Ele inclui contexto
+efetivo do Ollama, diferenças entre V1/V2 e evidências de chamadas reais.
+
 Este guia é o caminho curto para rodar o `moto_mcp` em uma máquina nova e
 confirmar que as duas buscas funcionam:
 
@@ -212,15 +217,12 @@ provedor Ollama. Crie o arquivo com este conteúdo mínimo:
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "servers": {
-      "motomcp": {
-        "type": "remote",
-        "url": "http://192.168.1.10:8765/mcp",
-        "oauth": false,
-        "codemode": false,
-        "headers": {
-          "Authorization": "Bearer seu-token"
-        }
+    "motomcp": {
+      "type": "remote",
+      "url": "http://192.168.1.10:8765/mcp",
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:MOTO_MCP_AUTH_TOKEN}"
       }
     }
   },
@@ -251,17 +253,24 @@ Troque:
 
 - `http://192.168.1.10:8765/mcp` pelo IP/porta do notebook que roda o
   `moto_mcp`;
-- `seu-token` pelo valor de `MOTO_MCP_AUTH_TOKEN` configurado no `.env` do
-  servidor `moto_mcp`.
+- configure `MOTO_MCP_AUTH_TOKEN` no ambiente do processo OpenCode com o
+  mesmo Bearer do servidor; não grave o valor real no JSON.
 
 O nome do servidor no exemplo é `motomcp`, sem hífen, para gerar nomes de tools
-mais simples para modelos locais. O `codemode: false` expõe as tools MCP mais
-diretamente ao modelo em vez de deixá-las agrupadas no Code Mode do OpenCode.
+mais simples para modelos locais. No OpenCode **1.18.31**, `mcp.servers` é
+aceito por compatibilidade, mas `codemode` é removido e não muda a exposição
+das tools. O exemplo usa o formato nativo V1, com ferramentas diretas.
+Para os perfis Ollama com contexto maior testados, use o exemplo remoto
+referenciado no início deste guia; a configuração mínima acima só registra
+a conexão e os modelos originais.
 
 Para o Ollama do OpenCode, configure uma variável no processo do OpenCode:
 
 ```powershell
 $env:MOTO_MCP_OPENCODE_OLLAMA_BASE_URL = "http://192.168.1.20:11434/v1"
+$segredo = Read-Host 'Bearer token do moto_mcp' -AsSecureString
+$env:MOTO_MCP_AUTH_TOKEN = [System.Net.NetworkCredential]::new('', $segredo).Password
+Remove-Variable segredo
 ```
 
 Isso é um comando de terminal, não uma linha para colocar no `.env` do
@@ -299,15 +308,16 @@ Esperado: `motomcp` aparecer como conectado. Depois pergunte algo que só o
 repositório sabe, por exemplo:
 
 ```text
-Use o moto-mcp para procurar MOTO_MCP_NETWORK_MODE.
+Use motomcp_search_documents para procurar MOTO_MCP_NETWORK_MODE.
 ```
 
 ## 9. Fazer o OpenCode consultar o MCP automaticamente
 
 O `opencode.json` conecta o MCP, mas não obriga sozinho o agente a usar o MCP
-como fonte de verdade. No OpenCode V2, o servidor precisa ficar dentro de
-`mcp.servers`; se o arquivo usar `mcp.moto-mcp` direto, a versão atual pode
-ignorar o servidor. Para isso, crie um arquivo `AGENTS.md` na mesma pasta
+como fonte de verdade. No OpenCode **1.18.31** testado aqui, `mcp.motomcp`
+é o formato nativo e `mcp.servers` é aceito por compatibilidade; `codemode`
+é removido. A V2 tem outro comportamento, conforme sua documentação.
+Para orientar o agente, crie um arquivo `AGENTS.md` na mesma pasta
 onde você roda o OpenCode:
 
 ```powershell
@@ -361,4 +371,57 @@ O `AGENTS.md` é carregado automaticamente pelo OpenCode para a sessão daquela
 pasta. Se quiser aplicar a mesma regra para todas as pastas do usuário, crie um
 `AGENTS.md` global na configuração do OpenCode, mas para este projeto o arquivo
 local é mais simples e mais seguro.
+
+## 10. `opencode mcp list` mostra conectado, mas o modelo não chama as tools
+
+Achado real (2026-09-16): `opencode mcp list` conectado só confirma que o
+handshake MCP (transporte + auth) funcionou. Não garante que o modelo vai
+efetivamente chamar as tools. Verifique, nesta ordem:
+
+1. **Prefixo da tool tem que bater com a chave do servidor.** O OpenCode
+   prefixa cada tool com a chave do servidor em `mcp` no `opencode.json`
+   (achado documentado em `to-do.md`, continuação 17). Se a chave é
+   `motomcp`, as tools chegam ao modelo como `motomcp_get_capabilities`,
+   `motomcp_search_documents` etc. Se o `AGENTS.md` da mesma pasta instruir o
+   modelo a chamar um prefixo diferente (ex.: `moto-mcp_get_capabilities`,
+   com hífen), a instrução aponta para outro nome de ferramenta. **Divergência
+   encontrada e corrigida nesta data**: `opencode/AGENTS.md` deste
+   repositório citava o prefixo `moto-mcp_` enquanto `opencode/opencode.json`
+   registra o servidor como `motomcp` — os dois arquivos precisam usar o
+   mesmo prefixo. Confira sempre os dois arquivos juntos antes de assumir
+   outra causa.
+2. **`OLLAMA_CONTEXT_LENGTH` no Ollama de raciocínio, não no `.env` do
+   `moto_mcp`.** Isso é o Ollama que o OpenCode usa pra pensar (ex.:
+   `10.80.132.178:11434` no cenário de MCP remoto), não o
+   `MOTO_MCP_OLLAMA_HOST` de embeddings deste `.env`. Sem contexto maior que
+   o padrão, o prompt (instruções do OpenCode + tools nativas + tools do
+   MCP) pode ser truncado. Na comparação atual com 4096 tokens, capabilities
+   executou nos três Qwen3, mas a busca falhou nos três; aumentar o contexto
+   permitiu executar a mesma busca. Ver as evidências do diagnóstico remoto e
+   `docs/guia_maquina_fraca.md` para os valores testados por modelo
+   (`qwen3:14b` → `32768`; `qwen3:8b`/`qwen3:4b` → `16384`). Suba o Ollama
+   remoto com essa variável setada antes de testar, ou crie perfis separados
+   com `PARAMETER num_ctx`, conforme o procedimento remoto testado, sem
+   reiniciar o serviço. Confirme `/api/ps`: metadados de contexto no OpenCode
+   ou reiniciar só o cliente não aumentam o limite do runtime Ollama.
+3. **Teste modelo por modelo.** Suporte a tool-calling estruturado varia por
+   modelo — `qwen2.5-coder:14b`, por exemplo, já foi confirmado que não emite
+   `tool_calls` neste Ollama (ver `opencode.json` da raiz). Não assuma que
+   `qwen3:14b`, `qwen3:8b` e `qwen3:4b` se comportam igual só porque são da
+   mesma família.
+4. **Diagnóstico direto do OpenCode**, na mesma pasta do `opencode.json`:
+   ```bash
+   opencode mcp list
+   opencode mcp debug motomcp
+   ```
+   `mcp debug` nessa versão verifica OAuth e encerra com `oauth: false`;
+   não é teste de chamada Bearer. Peça o prompt explícito "Use a tool
+   motomcp_get_capabilities agora. Não explique. Apenas execute a tool." e
+   exija evento `tool_use` concluído com dados reais. Se falhar, verifique
+   nomes, configuração efetiva, exposição de tools, permissões, contexto e
+   comportamento do modelo; conexão isolada não descarta essas causas.
+
+Não declare o problema resolvido sem repetir o teste do passo 4 depois de
+cada mudança — as três causas acima são independentes e podem estar
+empilhadas.
 
