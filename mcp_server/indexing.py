@@ -27,6 +27,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from mcp_server import documents
+from mcp_server.config import settings
 from mcp_server.embeddings import EmbeddingProvider
 from mcp_server.errors import DocumentNotFoundError
 from mcp_server.vectorstore import VectorStore
@@ -112,6 +113,14 @@ def _current_chunks(roots: tuple[str, ...]) -> dict[str, dict]:
             if entry.type != "file":
                 continue
 
+            category = entry.path.split("/", 1)[0] if "/" in entry.path else ROOT_CATEGORY
+            if category in settings.SEMANTIC_INDEX_EXCLUDED_PREFIXES:
+                # Continua legível via list_documents/read_document/
+                # search_documents (isso é settings.IGNORED_DIR_NAMES,
+                # não esta lista) — só não entra no índice de busca por
+                # sentido. Ver Settings.SEMANTIC_INDEX_EXCLUDED_PREFIXES.
+                continue
+
             text = documents.read_text(entry.path)
             for section, body in documents.split_sections(text).items():
                 if not body.strip():
@@ -121,7 +130,6 @@ def _current_chunks(roots: tuple[str, ...]) -> dict[str, dict]:
                     continue
 
                 chunk_id = f"{entry.path}#{section}"
-                category = entry.path.split("/", 1)[0] if "/" in entry.path else ROOT_CATEGORY
                 chunks[chunk_id] = {
                     "path": entry.path,
                     "section": section,

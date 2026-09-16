@@ -84,6 +84,15 @@ class Settings(BaseSettings):
     # causa exatamente disso — ver profile/profile.md.
     WRITABLE_PREFIXES: list[str] = Field(default=["projects", "clients", "profile"])
 
+    # Pastas de topo excluídas do ÍNDICE SEMÂNTICO (search_semantic) —
+    # diferente de IGNORED_DIR_NAMES abaixo: continuam legíveis por
+    # list_documents/read_document/search_documents normalmente, só não
+    # competem na busca por sentido. "docs/" é documentação de
+    # setup/operação (como instalar, como rodar) — não é "conhecimento"
+    # do domínio; "opencode/" é artefato de teste/config do cliente
+    # OpenCode, não conteúdo do moto_mcp. Decisão do Yuri (2026-09-16).
+    SEMANTIC_INDEX_EXCLUDED_PREFIXES: list[str] = Field(default=["docs", "opencode"])
+
     # Pastas nunca listadas/lidas, mesmo que tecnicamente dentro do
     # repo (controle de versão, caches, ambientes virtuais). ".vector_index"
     # entrou junto com o VECTOR_DB_PATH abaixo — é dado gerado (arquivos

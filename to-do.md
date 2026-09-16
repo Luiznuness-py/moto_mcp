@@ -936,6 +936,37 @@ todos corrigidos e testados:
   correta pra essa variável específica (não é regressão, é o que já
   funcionava). `135/135` testes passando.
 
+## Concluído (continuação 25) — `docs/` e `opencode/` fora do índice semântico
+
+- [x] **Pedido direto do Yuri** ("tira a pasta opencode e a pasta docs do
+  embedding por favor?") — as pastas `docs/` (documentação de
+  setup/operação, não "conhecimento" de domínio) e `opencode/` (artefato
+  de teste/config do cliente OpenCode, não conteúdo do moto_mcp)
+  continuam legíveis normalmente por `list_documents`/`read_document`/
+  `search_documents` — só pararam de competir na busca por sentido
+  (`search_semantic`). Nova config `Settings.SEMANTIC_INDEX_EXCLUDED_PREFIXES`
+  (`mcp_server/config.py`), checada em `_current_chunks()`
+  (`mcp_server/indexing.py`) por categoria (primeiro segmento do path).
+  **Testado de ponta a ponta**: rodado `scripts/reindex.py` de verdade e
+  inspecionado `store.list_indexed()` — nenhum chunk de categoria `docs`
+  ou `opencode` no índice (223 chunks, 10 categorias, nenhuma das duas
+  entre elas).
+- [x] **Achado durante o teste, não relacionado à mudança em si**: dois
+  testes começaram a falhar (`test_default_host_is_explicit_regardless_of_ambient_env`,
+  os dois de `tests/test_server_network_cli.py`) — não por regressão
+  desta mudança, e sim porque o `.env` real deste repositório (com
+  config de deploy de verdade: modo `lan`, host de LAN, token, host do
+  Ollama) passou a ser lido pelo `Settings()` global desde a
+  continuação 23, e esses testes assumiam (errado, desde então) que o
+  singleton global batia com os defaults da classe. Corrigidos: o teste
+  de embeddings agora fixa `settings.OLLAMA_HOST` explicitamente via
+  monkeypatch em vez de confiar no valor real; os testes de CLI de rede
+  agora sobrescrevem `MOTO_MCP_NETWORK_HOST`/`MOTO_MCP_AUTH_TOKEN` com
+  string vazia (não só removem a variável) — variável de ambiente
+  explícita tem prioridade sobre `.env` no pydantic-settings, então só
+  isso simula "nada configurado" de verdade mesmo com um `.env` real
+  presente. `135/135` testes passando.
+
 ## Pendências herdadas (não relacionadas a este plano)
 
 - Execução de comandos neste computador a partir de uma sessão do Claude

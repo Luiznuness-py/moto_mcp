@@ -120,7 +120,17 @@ def test_default_host_is_explicit_regardless_of_ambient_env(monkeypatch):
     garante que `OllamaEmbeddingProvider` sempre passa um host explícito
     pro `ollama.Client(...)`, nunca deixando a decisão pra variável de
     ambiente do sistema.
+
+    `settings.OLLAMA_HOST` é fixado aqui via monkeypatch, não deixado no
+    valor real do singleton global: desde que `.env` passou a ser
+    suportado (ver mcp_server/config.py), um `.env` real de deploy (modo
+    "lan", host de LAN de verdade) legitimamente sobrescreve o default —
+    e esse não é o comportamento que este teste específico verifica. O
+    que importa aqui é só "o que está em settings.OLLAMA_HOST é passado
+    explícito pro Client", não "qual é o valor de settings.OLLAMA_HOST
+    nesta máquina".
     """
+    monkeypatch.setattr(config.settings, "OLLAMA_HOST", "http://127.0.0.1:11434")
     fake_module = _FakeOllamaModule()
     monkeypatch.setitem(sys.modules, "ollama", fake_module)
 

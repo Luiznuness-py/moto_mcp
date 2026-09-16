@@ -16,7 +16,16 @@ import pytest
 
 
 def _run_without_network_env(extra_env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
-    env = {k: v for k, v in os.environ.items() if not k.startswith("MOTO_MCP_NETWORK") and k != "MOTO_MCP_AUTH_TOKEN"}
+    # Sobrescreve com string vazia, não só remove — o repositório pode ter
+    # um .env real configurado (ex: deploy em modo "lan" de verdade, com
+    # host e token reais) e, no pydantic-settings, variável de ambiente
+    # explícita tem prioridade sobre .env. Só remover a chave do dict não
+    # basta: o processo filho leria o valor real do .env do mesmo jeito.
+    # NETWORK_PORT fica de fora de propósito — tem default seguro (8765) e
+    # é int, então "" quebraria o parsing sem testar nada de relevante aqui.
+    env = dict(os.environ)
+    env["MOTO_MCP_NETWORK_HOST"] = ""
+    env["MOTO_MCP_AUTH_TOKEN"] = ""
     env.update(extra_env or {})
     return subprocess.run(
         [sys.executable, "-m", "mcp_server.server_network"],
