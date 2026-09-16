@@ -1,0 +1,36 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "motomcp": {
+        "type": "remote",
+        "url": "http://10.80.132.178:8765/mcp",
+        "oauth": false,
+        "codemode": false,
+        "headers": {
+          "Authorization": "Bearer COLE_SEU_TOKEN_AQUI"
+        }
+      }
+    }
+  },
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama",
+      "options": {
+        "baseURL": "http://10.80.132.178:11434/v1"
+      },
+      "models": {
+        "qwen3:4b": {
+          "name": "Qwen3 4B"
+        },
+        "qwen3:8b": {
+          "name": "Qwen3 8B"
+        },
+        "qwen3:14b": {
+          "name": "Qwen3 14B"
+        }
+      }
+    }
+  }
+}

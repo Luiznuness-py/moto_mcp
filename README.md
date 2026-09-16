@@ -31,6 +31,9 @@ Pra usar com um agente de terminal (OpenCode) e um modelo local (Ollama)
 ou de nuvem (Claude), sem precisar entender o servidor por dentro: ver
 `docs/guia_opencode.md` — passo a passo do zero.
 
+Para instalar em uma máquina nova e validar busca textual + busca por
+cosseno/LanceDB: ver `docs/guia_instalacao_busca.md`.
+
 ## Licença
 
 MIT — ver `LICENSE`. Use, copie, modifique e redistribua livremente,
