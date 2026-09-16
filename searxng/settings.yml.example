@@ -1,0 +1,29 @@
+# searxng/settings.yml.example
+#
+# Modelo pra gerar o settings.yml real (git-ignored, nunca commitado —
+# ver .gitignore). `use_default_settings: true` faz o SearXNG carregar
+# os defaults dele por baixo e só aplicar as diferenças declaradas aqui
+# — não precisa copiar o settings.yml oficial inteiro.
+#
+# Setup (uma vez, antes do primeiro `podman compose up`):
+#   cp searxng/settings.yml.example searxng/settings.yml
+#   depois trocar "ultrasecretkey" abaixo por um valor gerado de verdade
+#   (ex: `python -c "import secrets; print(secrets.token_hex(32))"`).
+#
+# `search.formats` incluir "json" é obrigatório — sem isso o SearXNG
+# recusa requisição com format=json (usada por mcp_server/websearch.py)
+# e devolve HTML, que quebra o parsing da tool search_web.
+
+use_default_settings: true
+
+general:
+  instance_name: "moto-mcp-searxng"
+
+server:
+  secret_key: "ultrasecretkey"
+  limiter: false
+
+search:
+  formats:
+    - html
+    - json

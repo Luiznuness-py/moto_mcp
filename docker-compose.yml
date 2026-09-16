@@ -1,0 +1,38 @@
+# docker-compose.yml
+#
+# SearXNG standalone, só pro moto_mcp (mcp_server/websearch.py) — não é
+# o mesmo container do projeto n8n do usuário, de propósito: o moto_mcp
+# deve continuar se bastando sozinho (qualquer um clona e usa), sem
+# depender de outro projeto estar de pé. Imagem/versão iguais às que já
+# rodam validadas no ecossistema (mesma referência usada no n8n).
+#
+# Setup (uma vez, antes do primeiro `podman compose up`):
+#   cp searxng/settings.yml.example searxng/settings.yml
+#   (editar o secret_key gerado ali dentro antes de subir)
+#
+# Uso (Podman, não Docker puro — padrão do ecossistema, ver
+# global/workflow.md/global/yuri_profile.md):
+#   podman machine start   # se a VM ainda não estiver ligada
+#   podman compose -p moto-mcp -f docker-compose.yml up -d searxng
+#   podman compose -p moto-mcp -f docker-compose.yml down
+#
+# Nome do arquivo continua "docker-compose.yml" de propósito — é só o
+# formato do compose (compatível), não implica rodar via Docker; mesma
+# convenção já usada em moto_ocr/moto_rules (docker-compose.*.yml
+# rodados com podman-compose/podman compose).
+
+name: moto-mcp
+
+services:
+  searxng:
+    image: docker.io/searxng/searxng:2026.9.12-d4f00d15d
+    container_name: moto-mcp-searxng
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - searxng-cache:/var/cache/searxng
+
+volumes:
+  searxng-cache:
