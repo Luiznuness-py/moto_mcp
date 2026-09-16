@@ -1,4 +1,4 @@
-# moto_mcp
+# Moto MCP
 
 Base de conhecimento e time de agentes de IA genérico e reutilizável — sem identidade de
 empresa, cliente ou pessoa específica embutida. Fork/clone este repositório para um
@@ -33,6 +33,6 @@ ou de nuvem (Claude), sem precisar entender o servidor por dentro: ver
 
 ## Licença
 
-Nenhuma licença concedida por padrão — todos os direitos reservados até definição
-explícita pelo mantenedor. Ver `LICENSE` (a criar) antes de redistribuir ou reutilizar
-comercialmente.
+MIT — ver `LICENSE`. Use, copie, modifique e redistribua livremente,
+inclusive comercialmente; só mantenha o aviso de copyright/autoria
+original em qualquer cópia ou parte substancial que for redistribuída.

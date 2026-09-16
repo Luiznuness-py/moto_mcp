@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "moto_mcp como servidor MCP: expõe o próprio repositório (regras, knowledge, agentes, projetos/clientes) como tools MCP — leitura aberta, escrita restrita a projects/, clients/ e profile/. Transporte stdio (local) ou streamable-http (rede — Tailscale, LAN com token ou loopback)."
 authors = [{name = "Yuri Motoshima", email = "yuri.motoshima@gmail.com"}]
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.13,<4.0"
 dependencies = [
     "mcp[cli] (>=1.28.0,<2.0.0)",
