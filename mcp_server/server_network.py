@@ -23,16 +23,31 @@
 # BearerTokenMiddleware quando há token configurado — mesmo padrão já
 # usado pelo mcp_gateway/server.py do moto_ocr.
 
+import sys
+
 import uvicorn
 
 from mcp_server.config import settings
+from mcp_server.errors import UnsafeBindHostError
 from mcp_server.network import ensure_safe_bind_host
 from mcp_server.server import mcp
 
 if __name__ == "__main__":
     from mcp_server.startup import reindex_on_startup
 
-    ensure_safe_bind_host(settings.NETWORK_HOST, settings.NETWORK_MODE, settings.AUTH_TOKEN)
+    # Mensagem limpa em vez de stack trace do Python — quem roda isso
+    # pela primeira vez (público que este servidor mira: pouco
+    # conhecimento técnico, ver docs/guia_maquina_fraca.md) não deveria
+    # ler traceback de código pra entender "esqueci de configurar uma
+    # variável de ambiente". Achado real: reproduzido rodando este
+    # comando sem nenhuma variável setada, igual quem clona o
+    # repositório pela primeira vez faria.
+    try:
+        ensure_safe_bind_host(settings.NETWORK_HOST, settings.NETWORK_MODE, settings.AUTH_TOKEN)
+    except UnsafeBindHostError as exc:
+        print(f"[moto_mcp] Não foi possível subir o servidor de rede: {exc}", file=sys.stderr)
+        sys.exit(1)
+
     reindex_on_startup()
 
     app = mcp.streamable_http_app()

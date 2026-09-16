@@ -852,6 +852,29 @@ todos corrigidos e testados:
   que dependa disso.
   `133/133` testes passando.
 
+## Concluído (continuação 22) — achado real do Yuri numa máquina de verdade
+
+- [x] **Primeiro teste real de verdade em outro computador** (clone do
+  GitHub, usuário Windows diferente, `moto_mcp` nunca configurado
+  antes) — e ele achou um problema real que eu não tinha testado: rodar
+  `poetry run python -m mcp_server.server_network` sem nenhuma variável
+  de ambiente configurada (cenário exato de quem acabou de clonar)
+  devolvia um **stack trace cru do Python**, não uma mensagem
+  compreensível. A lógica em si estava certa (o servidor deve mesmo
+  recusar subir sem host — isso já era testado), mas eu nunca tinha
+  testado a **experiência real** de rodar o comando do zero, sem nada
+  pré-configurado — só testei com as variáveis já setadas nas minhas
+  sessões. Falha real de cobertura de teste, não de lógica.
+  **Corrigido**: `server_network.py` agora captura
+  `UnsafeBindHostError` no ponto de entrada e imprime uma mensagem
+  limpa de uma linha + `sys.exit(1)`, em vez de deixar o traceback
+  vazar. Testado de verdade: reproduzi o erro original (mesmo
+  traceback), apliquei a correção, reproduzi nos dois casos (host
+  vazio e modo `lan` sem token) confirmando saída limpa.
+  `tests/test_server_network_cli.py` novo — sobe o processo de verdade
+  via `subprocess` (não mock), exatamente como um usuário rodaria, e
+  confirma ausência de "Traceback" na saída. `135/135` testes passando.
+
 ## Depois — troca de backend (validação da abstração)
 
 - [ ] Instalar `pgvector` no Postgres já existente + pacotes Python
