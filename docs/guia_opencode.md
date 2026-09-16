@@ -1,5 +1,11 @@
 # Guia — usando o moto_mcp com o OpenCode
 
+**OpenCode em outro computador, Ollama e MCP remotos:** use primeiro
+[o procedimento remoto e o diagnóstico de versões](diagnostico_opencode_remoto.md).
+Ele registra a comparação real em 2026-09-16, o tratamento de `codemode`
+no OpenCode 1.18.31 e a configuração sem Bearer no arquivo.
+O passo a passo abaixo descreve principalmente o cenário local/stdio.
+
 Passo a passo pra quem nunca usou nenhuma dessas ferramentas. Sem jargão
 desnecessário — só o que você precisa pra ter um assistente de IA no
 terminal que conhece o conteúdo deste repositório (regras, knowledge,

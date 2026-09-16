@@ -225,3 +225,6 @@ __marimo__/
 # gerado na máquina de quem sobe o container — nunca commitar. O
 # modelo sem segredo fica em searxng/settings.yml.example.
 searxng/settings.yml
+
+# Bearer usado apenas pelo cliente OpenCode local, nunca versionar.
+opencode/.motomcp-token

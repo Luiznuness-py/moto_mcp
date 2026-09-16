@@ -1,16 +1,17 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "servers": {
-      "motomcp": {
-        "type": "remote",
-        "url": "http://10.80.132.178:8765/mcp",
-        "oauth": false,
-        "codemode": false,
-        "headers": {
-          "Authorization": "Bearer COLE_SEU_TOKEN_AQUI"
-        }
-      }
+    "motomcp": {
+      "type": "remote",
+      "url": "http://10.80.132.178:8765/mcp",
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {file:./.motomcp-token}"
+      },
+      "enabled": true
+    },
+    "moto-mcp": {
+      "enabled": false
     }
   },
   "provider": {
@@ -22,13 +23,28 @@
       },
       "models": {
         "qwen3:4b": {
-          "name": "Qwen3 4B"
+          "name": "Qwen3 4B",
+          "id": "qwen3-4b-motomcp-16k",
+          "limit": {
+            "output": 4096,
+            "context": 16384
+          }
         },
         "qwen3:8b": {
-          "name": "Qwen3 8B"
+          "name": "Qwen3 8B",
+          "id": "qwen3-8b-motomcp-16k",
+          "limit": {
+            "output": 4096,
+            "context": 16384
+          }
         },
         "qwen3:14b": {
-          "name": "Qwen3 14B"
+          "name": "Qwen3 14B",
+          "id": "qwen3-14b-motomcp-32k",
+          "limit": {
+            "output": 4096,
+            "context": 32768
+          }
         }
       }
     }
