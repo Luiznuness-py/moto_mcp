@@ -217,8 +217,23 @@ token errado → `401`; token certo → passa da autenticação.
 
 ### Como rodar
 
+**Configuração persistente via `.env`** (recomendado — evita
+reexportar variável toda vez que abre um terminal novo, especialmente
+o token):
+
+```bash
+cd C:\Users\Pichau\Desktop\Projetos\moto_mcp
+cp .env.example .env
+# edite .env com os valores do seu caso (mode/host/token)
+poetry run python -m mcp_server.server_network
+```
+
+`.env` é git-ignored de propósito — nunca committar. Se não existir
+`.env`, tudo continua funcionando só com variável de ambiente direta
+(`export`/`$env:`), como sempre foi.
+
 **Modo `tailscale`** (padrão, recomendado quando o dispositivo remoto
-já está no seu tailnet):
+já está no seu tailnet) — via `.env` ou variável direta:
 
 ```bash
 tailscale ip -4    # confirma o IP desta máquina no tailnet, ex: 100.70.89.100

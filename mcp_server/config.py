@@ -8,11 +8,16 @@
 # ser compartilhado — não deve depender de um caminho absoluto de uma
 # máquina específica.
 #
-# Sem suporte a arquivo .env de propósito: não há nenhum cenário real
-# de uso que exija sobrescrever REPO_ROOT (mover este pacote pra fora
-# do moto_mcp contradiz a razão de ele existir). Pra o caso raro que
-# precisar mesmo assim, MOTO_MCP_REPO_ROOT como variável de ambiente
-# direta funciona — sem carregar arquivo .env de propósito geral.
+# Suporte a arquivo .env (reintroduzido 2026-09-16): tinha sido
+# removido de propósito quando a única coisa configurável era
+# REPO_ROOT (nenhum cenário real pra sobrescrever isso). Deixou de ser
+# verdade com o modo de rede — NETWORK_HOST/NETWORK_MODE/AUTH_TOKEN são
+# configuração real que precisa persistir entre sessões de terminal, e
+# reexportar isso toda vez (especialmente um token) é fricção real e
+# risco de erro de digitação. `.env` fica fora do git (`.gitignore`) —
+# nunca committar segredo; `.env.example` é o modelo sem segredo. Se
+# `.env` não existir, tudo continua funcionando só com variável de
+# ambiente direta, como sempre foi — nada quebra pra quem não usa.
 
 from pathlib import Path
 
@@ -44,6 +49,12 @@ class Settings(BaseSettings):
         env_prefix="MOTO_MCP_",
         case_sensitive=True,
         extra="ignore",
+        # Caminho absoluto (raiz do repo, mesma lógica de
+        # _default_repo_root() abaixo) — não relativo ao cwd de quem
+        # roda o comando, senão rodar de fora da raiz do repositório
+        # faria o .env não ser encontrado silenciosamente.
+        env_file=_default_repo_root() / ".env",
+        env_file_encoding="utf-8",
     )
 
     REPO_ROOT: Path = Field(default_factory=_default_repo_root)

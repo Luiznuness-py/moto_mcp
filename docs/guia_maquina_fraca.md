@@ -72,12 +72,14 @@ Se sua máquina não aguenta nem o perfil fraco (`qwen3:4b` + contexto
 Sem serviço systemd, sem Docker/Podman — só terminal, do jeito mais
 simples que sobrevive a fechar a conexão SSH:
 
+Configure uma vez, via `.env` (fica salvo — não precisa reexportar
+depois de fechar o SSH e voltar):
+
 ```bash
 cd ~/moto_mcp
 poetry install
-export MOTO_MCP_NETWORK_MODE=lan   # ou tailscale, se preferir
-export MOTO_MCP_NETWORK_HOST=<ip-da-maquina>
-export MOTO_MCP_AUTH_TOKEN=<token gerado, obrigatório em modo lan>
+cp .env.example .env
+nano .env   # MOTO_MCP_NETWORK_MODE, NETWORK_HOST, AUTH_TOKEN (obrigatório em modo lan)
 
 nohup poetry run python -m mcp_server.server_network > moto_mcp.log 2>&1 &
 disown

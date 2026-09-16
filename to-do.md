@@ -875,6 +875,36 @@ todos corrigidos e testados:
   via `subprocess` (não mock), exatamente como um usuário rodaria, e
   confirma ausência de "Traceback" na saída. `135/135` testes passando.
 
+## Concluído (continuação 23) — suporte a `.env` reintroduzido
+
+- [x] **Suporte a `.env` reintroduzido, motivado por necessidade real
+  nova.** Tinha sido removido de propósito em 2026-09-14 quando a
+  única coisa configurável era `REPO_ROOT` (nenhum cenário real de
+  uso). Deixou de ser verdade com o modo de rede —
+  `NETWORK_HOST`/`NETWORK_MODE`/`AUTH_TOKEN` são configuração real que
+  precisa persistir entre sessões de terminal; reexportar toda vez
+  (principalmente o token) é fricção real e risco de digitação, exatamente
+  o tipo de coisa que apareceu no teste do Yuri na máquina nova.
+  `Settings.model_config` ganhou `env_file` apontando pro caminho
+  absoluto da raiz do repo (mesma lógica de `_default_repo_root()` —
+  não relativo ao cwd de quem roda o comando, senão rodar de fora da
+  raiz faria o `.env` não ser encontrado silenciosamente). `.env.example`
+  novo (modelo sem segredo); `.env` já estava no `.gitignore` padrão.
+  `python-dotenv` não precisou ser declarado direto — já é dependência
+  do próprio `pydantic-settings`, não é importado direto no nosso
+  código.
+  **Validado de verdade**: `.env` real criado e carregado sem nenhuma
+  variável exportada (confirmado lendo `settings.NETWORK_MODE`/
+  `NETWORK_HOST`/`AUTH_TOKEN`); variável de ambiente exportada
+  confirmada com prioridade sobre `.env` (não quebra quem já usa
+  `export`); `server_network.py` rodado de ponta a ponta só com `.env`
+  — passou da validação e do reindex, só não conseguiu bindar numa
+  porta nova por causa do firewall (Windows), não relacionado ao
+  `.env`. `docs/mcp_server.md` e `docs/guia_maquina_fraca.md`
+  atualizados pra recomendar `.env` como caminho persistente, mantendo
+  `export`/`$env:` documentado como alternativa que continua
+  funcionando. `135/135` testes passando.
+
 ## Depois — troca de backend (validação da abstração)
 
 - [ ] Instalar `pgvector` no Postgres já existente + pacotes Python
