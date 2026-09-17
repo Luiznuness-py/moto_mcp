@@ -3,7 +3,7 @@
 #
 # Testa se um modelo do Ollama emite tool_calls estruturado de verdade
 # — mesmo método usado manualmente pra descartar/confirmar
-# qwen2.5-coder:14b, qwen3:4b/8b/14b e mistral-nemo:12b (ver to-do.md).
+# Use para comparar modelos locais antes de configurar no OpenCode.
 # Chama a API nativa do Ollama (/api/chat) direto, sem OpenCode no
 # meio.
 #

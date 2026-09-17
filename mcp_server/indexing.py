@@ -9,8 +9,7 @@
 # então todo chunk conta como "novo" e é upsertado; nas vezes seguintes,
 # só o que mudou de verdade (comparado por `content_hash`, não mtime) é
 # reprocessado. Por isso uma função só, chamável a qualquer momento,
-# cobre os dois itens do to-do.md ("escrever a indexação inicial" e
-# "reindexação incremental").
+# cobre indexação inicial e reindexação incremental.
 #
 # `reindex()` recebe `store`/`embedder` já prontos (injeção de
 # dependência, mesmo padrão de mcp_server/vectorstore.py e
@@ -53,7 +52,7 @@ from mcp_server.vectorstore import VectorStore
 DEFAULT_ROOTS: tuple[str, ...] = ("",)
 
 # Categoria usada pra chunks de arquivos soltos na raiz do repositório
-# (AGENTS.md, CLAUDE.md, README.md, to-do.md...) — esses `entry.path`
+# (AGENTS.md, CLAUDE.md, README.md etc.) — esses `entry.path`
 # não têm "/" (não vêm de dentro de nenhuma pasta), então não há um
 # primeiro segmento de path que sirva de categoria.
 ROOT_CATEGORY = "(raiz)"

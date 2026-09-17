@@ -1,44 +1,63 @@
 # Moto MCP
 
-Base de conhecimento e time de agentes de IA genérico e reutilizável — sem identidade de
-empresa, cliente ou pessoa específica embutida. Fork/clone este repositório para um
-ecossistema novo e preencha `profile/profile.md`, `ecosystem/`, `clients/` e
-`projects/` com o contexto real.
+Servidor MCP genérico para expor documentos de um repositório como ferramentas de leitura, busca e manutenção controlada.
 
-Comece sempre por `START_HERE.md`.
+O repositório pode ser usado como base de conhecimento local: adicione documentos em `knowledge/`, `projects/`, `clients/`, `profile/` e `agents/`, depois conecte um cliente MCP para consultar esse conteúdo.
 
-Arquivos-ponte:
+Comece por `START_HERE.md`.
 
-- `CLAUDE.md` para Claude.
-- `AGENTS.md` / `CODEX.md` para Codex.
-- `GEMINI.md` para Gemini.
-- `.github/copilot-instructions.md` para Copilot.
+## Arquivos-ponte
 
-Não armazene secrets neste repositório.
+- `AGENTS.md`
+- `CLAUDE.md`
+- `CODEX.md`
+- `GEMINI.md`
 
 ## Servidor MCP
 
-Este repositório também **é** um servidor MCP — expõe seu próprio
-conteúdo (regras, knowledge, agentes, projetos, clientes) como tools
-MCP via stdio (uso na mesma máquina) ou streamable-http (outro
-dispositivo — via Tailscale, rede doméstica/LAN com token obrigatório,
-ou só loopback), com leitura aberta e escrita restrita a `projects/`,
-`clients/` e `profile/`. `pyproject.toml` e o pacote `mcp_server/`
-ficam na raiz. Detalhes, modelo de segurança, transporte de rede e
-como configurar num cliente MCP: ver `docs/mcp_server.md`.
+O pacote `mcp_server/` expõe tools MCP para:
 
-Pra usar com um agente de terminal (OpenCode) e um modelo local (Ollama)
-ou de nuvem (Claude), sem precisar entender o servidor por dentro: ver
-`docs/guia_opencode.md` — passo a passo do zero.
+- listar documentos;
+- ler documentos;
+- fazer busca textual;
+- fazer busca semântica com `bge-m3` + LanceDB;
+- fazer busca web via SearXNG local;
+- criar e editar entradas permitidas em `projects/`, `clients/` e `profile/`.
 
-OpenCode em outro computador com Ollama + MCP remotos:
-[configuração testada e evidências](docs/diagnostico_opencode_remoto.md).
+Transportes disponíveis:
 
-Para instalar em uma máquina nova e validar busca textual + busca por
-cosseno/LanceDB: ver `docs/guia_instalacao_busca.md`.
+- stdio para uso local;
+- Streamable HTTP para acesso por outro dispositivo.
+
+Veja `docs/mcp_server.md`.
+
+## Instalação rápida
+
+```powershell
+poetry install
+ollama pull bge-m3
+copy .env.example .env
+poetry run python -m mcp_server.server_network
+```
+
+Guia completo: `docs/guia_instalacao_busca.md`.
+
+## OpenCode
+
+Para OpenCode local ou remoto, veja:
+
+- `docs/guia_opencode.md`
+- `docs/diagnostico_opencode_remoto.md`
+- `opencode/opencode.remote.example.json`
+- `opencode/AGENTS.md`
+
+## Segurança
+
+- `.env` real não deve ser commitado.
+- `searxng/settings.yml` real não deve ser commitado.
+- Em modo `lan`, Bearer token é obrigatório.
+- Escrita via MCP é restrita a `projects/`, `clients/` e `profile/`.
 
 ## Licença
 
-MIT — ver `LICENSE`. Use, copie, modifique e redistribua livremente,
-inclusive comercialmente; só mantenha o aviso de copyright/autoria
-original em qualquer cópia ou parte substancial que for redistribuída.
+MIT — ver `LICENSE`.

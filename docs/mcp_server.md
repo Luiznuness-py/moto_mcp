@@ -1,150 +1,45 @@
-# moto_mcp como servidor MCP
+# Servidor MCP
 
-Este repositório, na raiz, **é** um servidor MCP — não tem uma subpasta
-separada pro "código do servidor". `pyproject.toml` e o pacote
-`mcp_server/` vivem na raiz, ao lado de `global/`, `knowledge/`,
-`agents/`, `projects/`, `clients/` etc., porque o conteúdo dessas
-pastas é exatamente o que este servidor expõe via protocolo MCP.
+O `moto_mcp` expõe documentos do próprio repositório como tools MCP. O pacote Python fica em `mcp_server/` e pode rodar por stdio ou por Streamable HTTP.
 
-Ele expõe regras (`global/`), base de conhecimento (`knowledge/`),
-perfis de agente (`agents/`), projetos e clientes (`projects/`,
-`clients/`) como tools MCP — em vez de (ou além de) depender só da
-leitura direta de arquivo pelos arquivos-ponte (`CLAUDE.md`, `CODEX.md`,
-`AGENTS.md`, `GEMINI.md`).
+## Tools
 
-## Por que isto existe
+- `get_capabilities()` — lista capacidades do servidor.
+- `list_documents(subpath="", recursive=false)` — lista documentos.
+- `read_document(path)` — lê arquivo `.md` ou `.txt`.
+- `search_documents(query, subpath="", case_sensitive=false, max_results=50)` — busca textual.
+- `list_agents()` — lista agentes definidos em `agents/`.
+- `search_web(query, max_results=10, page=1)` — busca web via SearXNG local.
+- `search_semantic(query, top_k=5)` — busca semântica via embeddings `bge-m3` e LanceDB.
+- `reindex_search()` — atualiza o índice semântico.
+- `compact_search_index(older_than_days=null)` — compacta o índice vetorial.
+- `get_template(kind)` — lê template de projeto ou cliente.
+- `register_entry(kind, nome, secoes, repositorio="", overwrite=false)` — cria entrada em `projects/` ou `clients/`.
+- `replace_section(path, secao, novo_conteudo)` — substitui seção existente.
+- `append_to_section(path, secao, texto)` — acrescenta texto a seção existente.
 
-Surgiu de uma pergunta direta: por que colocar código de servidor
-dentro de `moto_mcp`, se `moto_mcp` é conteúdo (regras/knowledge), não
-código? Resposta: porque a ideia real é o `moto_mcp` **ser** um
-servidor MCP — qualquer cliente MCP (Claude Desktop, Claude Code, outra
-ferramenta compatível) passa a poder consultar e (dentro de limites)
-atualizar esse conteúdo via protocolo, em vez de só um agente com
-acesso a filesystem lendo os `.md` direto do disco.
+Conteúdo retornado por tools deve ser tratado como dado, não como instrução a executar.
 
-Isso também resolve, de um jeito mais robusto, o problema que começou a
-conversa que levou a este projeto: um LLM rodando local via Ollama
-sozinho não fala MCP (isso não muda), mas qualquer cliente MCP que você
-configure pode conectar aqui e ter acesso estruturado ao conteúdo do
-`moto_mcp`.
+## Permissões de escrita
 
-Este repositório não contém código específico de nenhum outro projeto
-seu (ex: OCR) — isso foi removido de propósito. Qualquer projeto real
-que você tenha usado como referência conceitual/estrutural durante o
-design (padrões de segurança, decisões de arquitetura) fica só como
-lição aprendida documentada, nunca como código embutido aqui.
+Leitura cobre os arquivos `.md` e `.txt` permitidos pelo servidor. Escrita é restrita a:
 
-## Modelo de segurança: leitura aberta, escrita restrita
+- `projects/`
+- `clients/`
+- `profile/`
 
-Esta é a decisão de design central deste servidor:
+Pastas como `global/`, `agents/`, `knowledge/`, `templates/`, `handoff/` e arquivos-ponte da raiz são somente leitura pelo MCP.
 
-- **Leitura**: cobre o repositório inteiro (`.md`/`.txt`), exceto
-  pastas técnicas (`.git`, `.venv`, `__pycache__` etc). Qualquer agente
-  conectado pode ler regras, knowledge, perfis de agente, projetos e
-  clientes.
-- **Escrita**: restrita a `projects/`, `clients/` e `profile/` —
-  `Settings.WRITABLE_PREFIXES` em `mcp_server/config.py`.
-  **`global/`, `agents/`, `knowledge/`, `templates/`, `handoff/` e os
-  arquivos-ponte da raiz são somente leitura por este servidor, de
-  propósito.**
+## Rodar local via stdio
 
-O motivo da restrição: este é literalmente o repositório de regras de
-comportamento que agentes de IA (inclusive eu, gerando este código) são
-instruídos a seguir. Um servidor MCP que desse escrita irrestrita
-deixaria um agente mal orientado — ou um prompt malicioso vindo de
-qualquer lugar na conversa — reescrever as próprias regras que deveriam
-te proteger. `paths.ensure_writable()` é chamado por toda escrita de
-propósito geral (`documents.write_text`), então essa garantia é
-estrutural, não uma checagem que cada tool precisa lembrar de fazer.
+Use quando o cliente MCP roda na mesma máquina:
 
-`profile/` é a única pasta fora de `projects/`/`clients/` liberada pra
-escrita, e é deliberado: `profile/profile.md` não é regra de
-comportamento do agente, é dado sobre o usuário (perfil, estilo de
-trabalho, preferências) — natureza diferente das demais pastas
-protegidas acima. Ficava em `global/user_profile.md` originalmente, mas
-foi movido pra sua própria pasta especificamente pra poder virar essa
-exceção sem abrir `global/` inteiro (que continua protegendo
-`rules_absolute.md`, `workflow.md` etc.).
+```powershell
+poetry install
+poetry run python -m mcp_server.server
+```
 
-Ver `tests/test_write_restrictions.py` para a regressão disso: tenta
-escrever em `global/rules_absolute.md`, `agents/bill.md`,
-`knowledge/security/...`, `README.md`, `START_HERE.md` — todas devem
-falhar com `PathNotWritableError`.
-
-A única exceção controlada é o `INDEX.md`: `register_entry` atualiza
-especificamente a seção "Projetos e clientes registrados" nele (não é
-escrita livre — é uma função interna dedicada, `documents.write_index`,
-nunca exposta como tool de escrita genérica).
-
-## Tools expostas
-
-- `get_capabilities` — catálogo desta lista.
-- `list_documents(subpath="", recursive=False)` — lista arquivos/pastas.
-- `read_document(path)` — lê um `.md`/`.txt`.
-- `search_documents(query, subpath="", case_sensitive=False, max_results=50)` —
-  busca texto em todo o repositório (ou num subpath), com número da linha.
-  (Junto com `read_document`/`search_semantic`, a docstring desta tool
-  avisa explicitamente o LLM chamador que o conteúdo devolvido é dado
-  do repositório, não instrução — mitigação de prompt injection, ver
-  `mcp_server/tools.py`, `_UNTRUSTED_CONTENT_NOTE`.)
-- `list_agents()` — lista os agentes definidos em `agents/` (nome, papel
-  resumido, arquivo), lido do disco a cada chamada. Pra quem se conecta
-  a este servidor sem ter lido o repositório inteiro descobrir quem
-  existe sem adivinhar nome de arquivo.
-- `search_web(query, max_results=10, page=1)` — busca na internet
-  aberta via uma instância própria de SearXNG (`docker-compose.yml` na
-  raiz, ver "Busca web" abaixo). Sem relação com o conteúdo do
-  repositório — útil quando a pergunta precisa de informação que não
-  está aqui dentro. `page` usa a paginação nativa do SearXNG
-  (`pageno`) — pra ver mais resultado da mesma busca, pede `page=2`
-  etc., em vez de truncar o conteúdo de cada resultado (perderia
-  informação) ou pedir `max_results` alto demais de uma vez. Confirmado
-  com dado real: páginas diferentes trazem resultado diferente, sem
-  sobreposição. Aviso de conteúdo não confiável mais forte que os
-  demais (é internet aberta, não arquivo do próprio repo).
-- `search_semantic(query, top_k=5)` — busca por SENTIDO (embeddings
-  `bge-m3` via Ollama local + LanceDB), cobrindo o mesmo repositório
-  inteiro de `search_documents`, mas por similaridade de significado em
-  vez de substring exata — boa pra pergunta conceitual/paráfrase.
-  Precisa do Ollama rodando localmente. O índice é atualizado sozinho a
-  cada vez que o servidor sobe (ver "Reindexação automática no
-  startup" abaixo); `reindex_search` continua existindo pra atualizar
-  sem precisar reiniciar o processo. Convive com `search_documents` de propósito
-  — cada uma boa pra um tipo de busca (exata vs. conceitual). Ver
-  `knowledge/vector-search/embeddings-e-busca-semantica.md`.
-- `reindex_search()` — atualiza o índice vetorial usado por
-  `search_semantic` (mesmo algoritmo incremental de
-  `scripts/reindex.py`: só reprocessa o que mudou de verdade, por
-  `content_hash`). A busca semântica não se atualiza sozinha a cada
-  escrita — chame esta tool depois de criar/editar/apagar um documento.
-  Precisa do Ollama.
-- `compact_search_index(older_than_days=None)` — manutenção do índice
-  vetorial (compacta fragmentos do LanceDB, limpa histórico de versões
-  antigas); não muda dado atual. Não precisa do Ollama.
-- `get_template(kind="projeto"|"cliente")` — retorna o `_TEMPLATE.md`
-  real (`projects/_TEMPLATE.md` ou `clients/_TEMPLATE.md`), lido do
-  disco a cada chamada — nunca hardcoded aqui, porque os templates do
-  seu repositório podem mudar.
-- `register_entry(kind, nome, secoes, repositorio="", overwrite=False)` —
-  cria `projects/<slug>.md` ou `clients/<slug>.md` a partir do template
-  real, preenchendo as seções passadas, e registra a entrada em
-  `INDEX.md`. Recusa sobrescrever por padrão. Valida as chaves de
-  `secoes` contra os cabeçalhos reais do template — nome errado dá erro
-  claro em vez de virar seção vazia silenciosamente.
-- `replace_section(path, secao, novo_conteudo)` / `append_to_section(path, secao, texto)` —
-  edita uma seção `## <nome>` de um documento já existente em `projects/`
-  ou `clients/` (a seção precisa já existir — não cria seção nova
-  silenciosamente, pra não divergir do template).
-
-## Transporte: stdio (local)
-
-Modo padrão pra uso na mesma máquina (Claude Desktop, OpenCode local,
-MCP Inspector) — sem porta de rede, sem autenticação pra pensar. O
-cliente MCP sobe este processo diretamente na sua máquina. (Existe
-também um modo de rede, streamable-http, pra outro dispositivo — ver
-"Transporte de rede" mais abaixo; os dois convivem, não competem.)
-
-### Configurar em um cliente MCP (ex: Claude Desktop)
+Exemplo de cliente MCP local:
 
 ```json
 {
@@ -152,272 +47,105 @@ também um modo de rede, streamable-http, pra outro dispositivo — ver
     "moto-mcp": {
       "command": "poetry",
       "args": ["run", "python", "-m", "mcp_server.server"],
-      "cwd": "C:\\Users\\Pichau\\Desktop\\Projetos\\moto_mcp"
+      "cwd": "C:\caminho\para\moto_mcp"
     }
   }
 }
 ```
 
-Se preferir não depender do Poetry estar no PATH do processo que sobe o
-cliente MCP, aponte direto pro Python da venv criada pelo Poetry (depois
-de rodar `poetry install` uma vez, `poetry env info --path` mostra o
-caminho):
+## Rodar na rede via Streamable HTTP
 
-```json
-{
-  "mcpServers": {
-    "moto-mcp": {
-      "command": "C:\\Users\\Pichau\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\<nome-da-venv>\\Scripts\\python.exe",
-      "args": ["-m", "mcp_server.server"]
-    }
-  }
-}
+Use quando outro computador precisa acessar o MCP:
+
+```powershell
+poetry run python -m mcp_server.server_network
 ```
 
-## Transporte de rede — acesso de outra máquina
+Variáveis principais:
 
-Além do stdio (seção acima, continua sendo o caminho pra uso na mesma
-máquina, sem mudança), o `moto_mcp` também sobe via **Streamable
-HTTP**, pra outro dispositivo (ex: outro computador rodando OpenCode)
-se conectar sem copiar o repositório. Mesmo padrão já usado pelo
-gateway MCP do `moto_ocr` (`mcp.streamable_http_app()` + `uvicorn`).
-`starlette`/`uvicorn` já eram dependência transitiva de `mcp[cli]` —
-agora também declarados direto em `pyproject.toml` (mesmo piso de
-versão), já que este servidor os usa como contrato próprio
-(`uvicorn.run`, `BaseHTTPMiddleware`), não só de passagem.
+| Variável | Uso |
+|---|---|
+| `MOTO_MCP_NETWORK_MODE` | `tailscale`, `lan` ou `local` |
+| `MOTO_MCP_NETWORK_HOST` | IP onde o servidor fará bind |
+| `MOTO_MCP_NETWORK_PORT` | porta, padrão `8765` |
+| `MOTO_MCP_AUTH_TOKEN` | Bearer token; obrigatório em `lan` |
 
-### Três modos — `MOTO_MCP_NETWORK_MODE`
+Modos de rede:
 
-Cada modo tem uma fronteira de host diferente, validada por
-`mcp_server/network.py` (`ensure_safe_bind_host`, coberto por
-`tests/test_network.py`) antes mesmo do socket abrir:
-
-| Modo | Fronteira de host aceita | Autenticação |
+| Modo | Hosts aceitos | Token |
 |---|---|---|
-| `tailscale` (padrão) | só `100.64.0.0/10` (interface do Tailscale) | Tailscale já autentica o dispositivo (WireGuard) — token Bearer opcional |
-| `lan` | `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16` (rede doméstica) | **Token Bearer obrigatório** — LAN não autentica ninguém sozinha; sem `MOTO_MCP_AUTH_TOKEN`, o servidor recusa subir |
-| `local` | só `127.0.0.1`/`::1` (mesma máquina) | Token opcional |
+| `tailscale` | `100.64.0.0/10` | opcional |
+| `lan` | `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16` | obrigatório |
+| `local` | `127.0.0.1`, `::1` | opcional |
 
-Em qualquer modo, `0.0.0.0`/`::`/wildcard nunca é aceito, mesmo por
-engano de configuração.
+`0.0.0.0` e `::` não são aceitos.
 
-**Por que `lan` exige token e `tailscale` não**: o Tailscale já resolve
-autenticação de dispositivo — só quem você aprovou explicitamente no
-tailnet alcança a porta. LAN não tem isso — qualquer coisa na mesma
-rede de casa (ou de um Wi-Fi compartilhado) alcançaria leitura do
-repositório inteiro e escrita em `projects/clients/profile` sem
-barreira nenhuma. `mcp_server/auth.py`
-(`BearerTokenMiddleware`) fecha essa lacuna com um segredo
-compartilhado simples — sem JWE/tenant/scope como o `moto_ocr` tem,
-porque o `moto_mcp` não tem esse conceito (é servidor pessoal de um
-usuário só).
+Exemplo `.env` para LAN:
 
-Validado de ponta a ponta, em modo `lan` de verdade: sem token → `401`;
-token errado → `401`; token certo → passa da autenticação.
-
-### Como rodar
-
-**Configuração persistente via `.env`** (recomendado — evita
-reexportar variável toda vez que abre um terminal novo, especialmente
-o token):
-
-```bash
-cd C:\Users\Pichau\Desktop\Projetos\moto_mcp
-cp .env.example .env
-# edite .env com os valores do seu caso (mode/host/token)
-poetry run python -m mcp_server.server_network
+```env
+MOTO_MCP_NETWORK_MODE=lan
+MOTO_MCP_NETWORK_HOST=192.168.1.10
+MOTO_MCP_NETWORK_PORT=8765
+MOTO_MCP_AUTH_TOKEN=gere-um-token-com-32-ou-mais-caracteres
 ```
 
-`.env` é git-ignored de propósito — nunca committar. Se não existir
-`.env`, tudo continua funcionando só com variável de ambiente direta
-(`export`/`$env:`), como sempre foi.
+Gerar token:
 
-**Modo `tailscale`** (padrão, recomendado quando o dispositivo remoto
-já está no seu tailnet) — via `.env` ou variável direta:
-
-```bash
-tailscale ip -4    # confirma o IP desta máquina no tailnet, ex: 100.70.89.100
-
-cd C:\Users\Pichau\Desktop\Projetos\moto_mcp
-$env:MOTO_MCP_NETWORK_HOST = "100.70.89.100"
-poetry run python -m mcp_server.server_network
-```
-
-**Modo `lan`** (sem Tailscale — rede doméstica direta):
-
-```bash
-cd C:\Users\Pichau\Desktop\Projetos\moto_mcp
-python -c "import secrets; print(secrets.token_hex(32))"   # gera o token
-
-$env:MOTO_MCP_NETWORK_MODE = "lan"
-$env:MOTO_MCP_NETWORK_HOST = "192.168.1.10"   # IP da sua máquina na rede local
-$env:MOTO_MCP_AUTH_TOKEN = "o token gerado acima"
-poetry run python -m mcp_server.server_network
-```
-
-Porta padrão `8765` (`MOTO_MCP_NETWORK_PORT` pra trocar). No cliente MCP
-do outro dispositivo (ex: OpenCode, `opencode.json`), registre como
-servidor remoto — em modo `lan`, inclua o header `Authorization`:
-
-```json
-{
-  "mcp": {
-    "moto-mcp": {
-      "type": "remote",
-      "url": "http://192.168.1.10:8765/mcp",
-      "headers": { "Authorization": "Bearer o-token-gerado" }
-    }
-  }
-}
-```
-
-(Em modo `tailscale`, se não configurou `MOTO_MCP_AUTH_TOKEN`, o campo
-`headers` acima não é necessário.)
-
-Validado de ponta a ponta: servidor sobe, bind confirmado no IP
-correto pro modo escolhido (log do uvicorn), responde HTTP real na
-porta — e recusa subir com host vazio, `0.0.0.0`, host fora da faixa
-do modo escolhido, ou (em modo `lan`) sem token configurado.
-
-## Busca web (SearXNG)
-
-`search_web` depende de uma instância própria de SearXNG, standalone —
-**não** é o container do projeto `n8n` do usuário, de propósito: o
-`moto_mcp` deve continuar se bastando sozinho, sem depender de outro
-projeto estar de pé.
-
-Setup (uma vez) — Podman, não Docker (padrão do ecossistema, ver
-`global/yuri_profile.md`):
-
-```bash
-cd C:\Users\Pichau\Desktop\Projetos\moto_mcp
-cp searxng/settings.yml.example searxng/settings.yml
-# editar searxng/settings.yml e trocar "ultrasecretkey" por um valor
-# gerado de verdade:
+```powershell
 python -c "import secrets; print(secrets.token_hex(32))"
+```
 
-podman machine start   # se a VM ainda não estiver ligada
+## SearXNG para `search_web`
+
+Primeira configuração:
+
+```powershell
+copy searxng\settings.yml.example searxng\settings.yml
+notepad searxng\settings.yml
+```
+
+Troque o `secret_key` do arquivo local. Depois suba:
+
+```powershell
+podman machine start
 podman compose -p moto-mcp -f docker-compose.yml up -d searxng
 ```
 
-`settings.yml` é git-ignored de propósito (carrega o `secret_key` real
-— nunca commitar). `Settings.SEARXNG_BASE_URL` (padrão
-`http://127.0.0.1:8080`) aponta pra essa instância local.
+Teste:
 
-**Validado de ponta a ponta (2026-09-15)**: `podman compose up`
-funcionou (imagem pinada existe de verdade), `curl
-"http://127.0.0.1:8080/search?q=python&format=json"` devolveu JSON
-real, e `mcp_server.websearch.search_web("python programming
-language")` chamado direto (sem mock) devolveu resultados reais da
-web. Não é só `tests/test_websearch.py` (6 casos com cliente falso) —
-é a stack inteira rodando de verdade.
-
-## OpenCode (agente de terminal com Ollama ou API de nuvem)
-
-`opencode.json` na raiz do repositório registra o `moto_mcp` como
-servidor MCP local pro [OpenCode](https://opencode.ai) (`npm install -g
-opencode-ai`) — validado de verdade: `opencode mcp list` mostra `moto-mcp
-connected`, o OpenCode sobe o processo via stdio sozinho
-(`poetry run python -m mcp_server.server`), sem configuração adicional.
-
-Dois providers de modelo configurados, escolha em tempo de uso
-(`opencode --model <provider>/<modelo>` ou selecionando na TUI) — nenhum
-é obrigatório, o usuário decide:
-
-- **`ollama`** (local, gratuito, sem chave): usa a API compatível com
-  OpenAI do Ollama. Requer `MOTO_MCP_OPENCODE_OLLAMA_BASE_URL` no
-  ambiente (ex: `http://127.0.0.1:11434/v1`, ou o IP do Tailscale se o
-  Ollama estiver em outra máquina). **O nome do modelo em
-  `opencode.json` (`"qwen2.5-coder:14b"`) precisa ser editado pra bater
-  exatamente com o que você rodou `ollama pull`** — é a chave que vai
-  direto pra API do Ollama, não um valor de variável de ambiente (só
-  `baseURL` é parametrizável por env var; testado e confirmado que
-  colocar `{env:...}` na chave do modelo não funciona — o texto literal
-  seria enviado como nome do modelo).
-- **`anthropic`** (nuvem, paga): `apiKey` via `{env:ANTHROPIC_API_KEY}`
-  — nunca coloque a chave direta no arquivo. Pra outro provider de
-  nuvem (OpenAI, Gemini), adicionar bloco equivalente em `provider` (ver
-  [docs de providers do OpenCode](https://opencode.ai/docs/providers)).
-
-**Não validado ainda**: uma resposta real do modelo via Ollama (o
-Ollama não estava rodando no momento do teste, só a conexão MCP e a
-resolução do model id foram confirmadas de ponta a ponta).
-
-## Setup local
-
-Requer Python `>=3.13,<4.0` e Poetry.
-
-```bash
-cd C:\Users\Pichau\Desktop\Projetos\moto_mcp
-poetry install
-poetry run python -m mcp_server.server
+```powershell
+Invoke-RestMethod "http://127.0.0.1:8080/search?q=teste&format=json"
 ```
 
-Ele espera stdin/stdout de um cliente MCP real — rodar direto no
-terminal fica esperando input, o que é o comportamento correto pra
-stdio (não é um bug, é assim que MCP via stdio funciona). Pra testar de
-verdade, configure num cliente MCP (acima) ou use o MCP Inspector.
+Configuração do MCP:
 
-**Não use `poetry run mcp dev mcp_server/server.py`** — o subcomando
-`dev` do `mcp[cli]` sempre delega a execução pra um ambiente `uv`
-isolado (`uv run --with mcp mcp run <arquivo>`), mesmo chamado com
-`poetry run` na frente; esse ambiente `uv` não tem `mcp_server` nem
-suas dependências (`lancedb`, `ollama`, `pydantic-settings`) instaladas,
-então o servidor falha ao subir. Abra o Inspector direto e configure o
-servidor manualmente, sem passar pelo `mcp dev`:
-
-```bash
-cd C:\Users\Pichau\Desktop\Projetos\moto_mcp
-npx @modelcontextprotocol/inspector
+```env
+MOTO_MCP_SEARXNG_BASE_URL=http://127.0.0.1:8080
 ```
 
-Na tela do Inspector, adicione um servidor (transporte `STDIO`) com:
+## Busca semântica
 
-- **Command**: `poetry`
-- **Arguments**: quatro itens separados — `run`, `python`, `-m`,
-  `mcp_server.server` (não uma string só; o campo espera cada argumento
-  como item próprio, senão o Poetry recebe tudo grudado como um único
-  argumento inválido)
-- **Working directory**: `C:\Users\Pichau\Desktop\Projetos\moto_mcp`
-  (ou já rode o `npx` acima de dentro dessa pasta)
+Requisitos:
 
-## Testes
-
-```bash
-poetry install --with dev
-poetry run pytest -v
+```powershell
+ollama pull bge-m3
 ```
 
-**Confirmado de verdade (2026-09-15)**: `poetry run pytest -v` rodado
-neste computador, `102/102` passou (81 originais + 11 do transporte de
-rede + 4 da reindexação automática no startup + 6 da busca web).
-`poetry.lock` existe e
-está commitado.
+Configuração:
 
-## Reindexação automática no startup
+```env
+MOTO_MCP_OLLAMA_HOST=http://127.0.0.1:11434
+MOTO_MCP_EMBEDDING_MODEL=bge-m3
+```
 
-Os dois pontos de entrada (`server.py`, `server_network.py`) chamam
-`mcp_server.startup.reindex_on_startup()` antes de `mcp.run(...)` —
-quem acabou de clonar o repositório não precisa lembrar de rodar
-`scripts/reindex.py` manualmente pra `search_semantic` funcionar, e o
-índice fica atualizado a cada restart sem custo extra (`reindex()` já é
-incremental — só reprocessa o que mudou, por `content_hash`). Falha
-de embedding/vectorstore (Ollama fora do ar, pacote não instalado) vira
-aviso no log, nunca impede o servidor de subir — validado com o Ollama
-desta máquina de fato fora do ar durante o teste.
+Atualizar índice manualmente:
 
-## Pendências conhecidas
+```powershell
+poetry run python scripts/reindex.py
+```
 
-- Sem tool de **remover** um projeto/cliente registrado — só criar
-  (com `overwrite`) e editar seção. Avaliar se faz sentido antes de
-  expor escrita a um agente que pode, por exemplo, tentar "limpar"
-  registros por conta própria.
-- Sem limite de tamanho em `read_document`/`search_documents` — um
-  arquivo `.md` gigante seria lido/varrido inteiro. Baixo risco aqui
-  (é um repositório de anotações, não dados de usuário), mas fica
-  registrado.
-- Sem lock de arquivo — duas escritas concorrentes no mesmo documento
-  (`register_entry`/`replace_section`) podem colidir. Baixo risco
-  enquanto for um agente por vez na mesma máquina; o modo de rede
-  aumenta a chance real disso (mais de um dispositivo podendo escrever
-  ao mesmo tempo), mas continua não tratado.
+Verificar perguntas conhecidas:
+
+```powershell
+poetry run python scripts/verify_search.py
+```

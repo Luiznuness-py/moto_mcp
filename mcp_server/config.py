@@ -8,16 +8,9 @@
 # ser compartilhado — não deve depender de um caminho absoluto de uma
 # máquina específica.
 #
-# Suporte a arquivo .env (reintroduzido 2026-09-16): tinha sido
-# removido de propósito quando a única coisa configurável era
-# REPO_ROOT (nenhum cenário real pra sobrescrever isso). Deixou de ser
-# verdade com o modo de rede — NETWORK_HOST/NETWORK_MODE/AUTH_TOKEN são
-# configuração real que precisa persistir entre sessões de terminal, e
-# reexportar isso toda vez (especialmente um token) é fricção real e
-# risco de erro de digitação. `.env` fica fora do git (`.gitignore`) —
-# nunca committar segredo; `.env.example` é o modelo sem segredo. Se
-# `.env` não existir, tudo continua funcionando só com variável de
-# ambiente direta, como sempre foi — nada quebra pra quem não usa.
+# Suporte a arquivo .env: usado para configuração persistente de rede,
+# autenticação, Ollama e SearXNG. `.env` fica fora do git; `.env.example`
+# é o modelo sem segredo.
 
 from pathlib import Path
 
@@ -66,22 +59,8 @@ class Settings(BaseSettings):
     READABLE_EXTENSIONS: list[str] = Field(default=[".md", ".txt"])
 
     # Pastas (relativas à raiz do repo) onde ESCRITA é permitida por
-    # este servidor. Tudo fora disso — global/, agents/, knowledge/,
-    # templates/, handoff/, os arquivos-ponte na raiz (CLAUDE.md,
-    # AGENTS.md etc.) — é só leitura por aqui, de propósito: um agente
-    # conectado neste MCP não deve conseguir reescrever as próprias
-    # regras/comportamento através dele. Ver docs/mcp_server.md,
-    # "Modelo de segurança".
-    #
-    # `profile/` é a exceção deliberada a essa regra: não guarda regra
-    # de comportamento do agente, guarda dado SOBRE o usuário (perfil,
-    # estilo de trabalho, preferências) — natureza diferente de
-    # `global/rules_absolute.md` e companhia. Faz sentido o próprio
-    # agente atualizar isso via replace_section/append_to_section (ex:
-    # "Mike, anota que eu prefiro respostas diretas"), então é
-    # deliberadamente gravável, ao contrário do resto de fora de
-    # projects/clients. Movido de `global/user_profile.md` pra cá por
-    # causa exatamente disso — ver profile/profile.md.
+    # este servidor. O restante do repositório é somente leitura via MCP.
+    # Ver docs/mcp_server.md.
     WRITABLE_PREFIXES: list[str] = Field(default=["projects", "clients", "profile"])
 
     # Pastas de topo excluídas do ÍNDICE SEMÂNTICO (search_semantic) —
@@ -90,7 +69,7 @@ class Settings(BaseSettings):
     # competem na busca por sentido. "docs/" é documentação de
     # setup/operação (como instalar, como rodar) — não é "conhecimento"
     # do domínio; "opencode/" é artefato de teste/config do cliente
-    # OpenCode, não conteúdo do moto_mcp. Decisão do Yuri (2026-09-16).
+    # OpenCode, não conteúdo do moto_mcp.
     SEMANTIC_INDEX_EXCLUDED_PREFIXES: list[str] = Field(default=["docs", "opencode"])
 
     # Pastas nunca listadas/lidas, mesmo que tecnicamente dentro do
@@ -139,7 +118,7 @@ class Settings(BaseSettings):
     # Endereço/porta do modo de rede (transporte streamable-http,
     # mcp_server/server_network.py) — modo opcional, ao lado do stdio,
     # pra outro dispositivo (fora desta máquina) se conectar. Sem
-    # padrão de propósito: NETWORK_HOST vazio força configuração
+    # padrão intencionalmente: NETWORK_HOST vazio força configuração
     # explícita via MOTO_MCP_NETWORK_HOST (o IP da interface do
     # Tailscale, formato 100.x.x.x) em vez de adivinhar ou cair num
     # default que poderia expor a porta sem querer. Validado por
@@ -155,7 +134,7 @@ class Settings(BaseSettings):
     # 10.0.0.0/8 + 172.16.0.0/12 + 192.168.0.0/16) ou "local" (só
     # 127.0.0.1/::1, mesma máquina). Ver mcp_server/network.py pra a
     # validação de verdade — este campo só seleciona qual regra usar.
-    # Padrão "tailscale" de propósito: é a fronteira com autenticação de
+    # Padrão "tailscale": é a fronteira com autenticação de
     # dispositivo de verdade (WireGuard); mudar pra "lan" é escolha
     # explícita do usuário, não default.
     NETWORK_MODE: str = Field(default="tailscale")
@@ -171,7 +150,7 @@ class Settings(BaseSettings):
 
     # Base URL da instância própria de SearXNG (ver docker-compose.yml
     # na raiz — serviço `searxng`, standalone, não a instância do
-    # projeto n8n do usuário) usada pela tool search_web. Diferente do
+    # SearXNG usada pela tool search_web. Diferente do
     # Ollama, não tem raciocínio de "0.0.0.0 quebra o cliente" aqui —
     # SearXNG é só um HTTP GET comum, sem biblioteca cliente especial.
     SEARXNG_BASE_URL: str = Field(default="http://127.0.0.1:8080")

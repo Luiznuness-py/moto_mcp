@@ -1,29 +1,14 @@
-# Política de commit — TEMPLATE, definir por projeto
+# Política de commit
 
-Regras genéricas, válidas até o usuário definir a política específica:
+## Regras
 
-- Nenhum commit ou push deve ser feito sem que o fluxo já tenha autorizado localmente, ou
-  sem pedido explícito para push.
-- Mensagem de commit objetiva, descrevendo o que mudou e por quê.
-- Antes de commitar, conferir o working tree para não misturar alterações não
-  relacionadas.
-- Se houver alterações abertas de outro agente/pessoa no mesmo repo, preservar e separar
-  quando possível; se a separação ficar insegura, avisar o usuário antes de commitar.
-- Separar commits por tema/alteração lógica quando houver mais de uma frente no mesmo
-  turno.
+- Commit local somente quando autorizado pelo fluxo de trabalho do usuário ou por pedido explícito.
+- Push somente com pedido explícito.
+- Antes de commitar, conferir o working tree.
+- Não misturar alterações sem relação no mesmo commit.
+- Mensagem objetiva, descrevendo o que mudou.
+- Não incluir secrets, tokens, `.env` real ou dados sensíveis.
 
-## Atribuição de autoria — decisão do usuário, não uma regra fixa deste template
+## Atribuição
 
-Times diferentes têm preferências diferentes sobre citar ferramenta de IA em commits
-(alguns preferem trailer neutro tipo `Co-Authored-By: <ferramenta>`, outros preferem não
-mencionar nenhuma ferramenta, por posicionamento de marca ou política interna). **Este
-template não impõe nenhuma das duas** — defina aqui a política real do seu projeto antes
-de usar em produção:
-
-```text
-[Preencher: trailer de atribuição a usar, ou "nenhum" se a política for não mencionar
-ferramenta de IA em nenhum commit]
-```
-
-Push continua exigindo pedido explícito do usuário independente da política escolhida
-aqui.
+Siga a política definida pelo usuário do clone local. Se não houver política definida, não adicione trailers de autoria.

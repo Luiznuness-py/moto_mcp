@@ -1,6 +1,6 @@
 # tests/test_server_network_cli.py
 #
-# Achado real (2026-09-16): rodar `python -m mcp_server.server_network`
+# Regressão: rodar `python -m mcp_server.server_network`
 # sem nenhuma variável de ambiente configurada (cenário exato de quem
 # clona o repositório pela primeira vez) devolvia um stack trace cru do
 # Python — péssima experiência pro público que este servidor mira
@@ -21,7 +21,7 @@ def _run_without_network_env(extra_env: dict[str, str] | None = None) -> subproc
     # host e token reais) e, no pydantic-settings, variável de ambiente
     # explícita tem prioridade sobre .env. Só remover a chave do dict não
     # basta: o processo filho leria o valor real do .env do mesmo jeito.
-    # NETWORK_PORT fica de fora de propósito — tem default seguro (8765) e
+    # NETWORK_PORT fica de fora intencionalmente — tem default seguro (8765) e
     # é int, então "" quebraria o parsing sem testar nada de relevante aqui.
     env = dict(os.environ)
     env["MOTO_MCP_NETWORK_HOST"] = ""

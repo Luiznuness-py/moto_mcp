@@ -24,7 +24,7 @@
 # Isso não substitui pensar no problema — é impedir, antes mesmo de
 # abrir o socket, que uma configuração errada (esquecer de setar
 # MOTO_MCP_NETWORK_HOST, setar "0.0.0.0" por engano, ou ligar "lan" sem
-# token) exponha o servidor além do que foi escolhido de propósito.
+# token) exponha o servidor além do que foi escolhido intencionalmente.
 
 from __future__ import annotations
 
@@ -70,7 +70,7 @@ def ensure_safe_bind_host(host: str, mode: str, auth_token: str = "") -> None:
     if not host:
         raise UnsafeBindHostError(
             "MOTO_MCP_NETWORK_HOST não configurado. Sem isso o servidor "
-            "não sobe, de propósito — veja docs/mcp_server.md, "
+            "não sobe. Veja docs/mcp_server.md, "
             "'Transporte de rede', pra saber qual IP usar no modo "
             f"'{mode}'."
         )

@@ -21,7 +21,7 @@
 # Usa mcp.streamable_http_app() + uvicorn direto (em vez de
 # mcp.run(transport=...)) especificamente pra poder acoplar o
 # BearerTokenMiddleware quando há token configurado — mesmo padrão já
-# usado pelo mcp_gateway/server.py do moto_ocr.
+# usado pelo transporte Streamable HTTP do MCP.
 
 import sys
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     # pela primeira vez (público que este servidor mira: pouco
     # conhecimento técnico, ver docs/guia_maquina_fraca.md) não deveria
     # ler traceback de código pra entender "esqueci de configurar uma
-    # variável de ambiente". Achado real: reproduzido rodando este
+    # variável de ambiente".
     # comando sem nenhuma variável setada, igual quem clona o
     # repositório pela primeira vez faria.
     try:

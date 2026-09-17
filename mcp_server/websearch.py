@@ -6,7 +6,7 @@
 #
 # Sem Protocol/contrato de troca de provedor aqui, ao contrário de
 # embeddings.py/vectorstore.py: aqueles têm um plano concreto de trocar
-# de implementação (Postgres/pgvector registrado em to-do.md). Não há
+# de implementação. Não há
 # plano equivalente de trocar o motor de busca web — construir essa
 # abstração agora seria abstração prematura sem justificativa real (ver
 # global/workflow.md). Se um dia precisar trocar, generaliza então.

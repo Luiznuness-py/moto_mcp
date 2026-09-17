@@ -5,7 +5,7 @@
 # Mesma lógica de mcp_server/embeddings.py: isola completamente a escolha
 # do banco vetorial (hoje: LanceDB, embarcado, sem servidor separado) do
 # resto do código (indexação, busca). Trocar de banco — o próximo passo
-# planejado é validar Postgres/pgvector, ver to-do.md — significa escrever
+# planejado é validar Postgres/pgvector — significa escrever
 # um novo adaptador que implemente VectorStore. Nada além disso deveria
 # precisar mudar. Ver knowledge/vector-search/ para o raciocínio completo
 # por trás dessas decisões (por que cosseno, por que chunk_id estável,
@@ -181,7 +181,7 @@ class LanceDBVectorStore:
     def list_indexed(self) -> dict[str, dict]:
         """Lê a tabela inteira (sem busca vetorial) e devolve
         {chunk_id: metadata}."""
-        # to_pydict() em vez de to_pandas() de propósito — não depende de
+        # to_pydict() em vez de to_pandas() intencionalmente — não depende de
         # pandas estar instalado, só do pyarrow que já vem com o lancedb.
         columns = self._table.to_arrow().to_pydict()
         ids = columns.get("id", [])

@@ -2,7 +2,7 @@
 name = "moto-mcp"
 version = "0.1.0"
 description = "moto_mcp como servidor MCP: expõe o próprio repositório (regras, knowledge, agentes, projetos/clientes) como tools MCP — leitura aberta, escrita restrita a projects/, clients/ e profile/. Transporte stdio (local) ou streamable-http (rede — Tailscale, LAN com token ou loopback)."
-authors = [{name = "Yuri Motoshima", email = "yuri.motoshima@gmail.com"}]
+authors = [{name = "moto_mcp contributors"}]
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.13,<4.0"
@@ -12,27 +12,12 @@ dependencies = [
     "pydantic-settings (>=2.12.0,<3.0.0)",
     "lancedb (>=0.38.0,<0.39.0)",
     "ollama (>=0.6.2,<0.7.0)",
-    # uvicorn/starlette/httpx já vinham como dependência transitiva de
-    # mcp[cli], mas server_network.py/auth.py/websearch.py/
-    # scripts/test_tool_calling.py os importam e usam como contrato
-    # próprio (uvicorn.run, BaseHTTPMiddleware, httpx.Client/get/post) —
-    # declarar direto evita quebrar se a versão do mcp[cli] mudar essas
-    # dependências transitivas no futuro. Piso alinhado ao que o
-    # mcp[cli] já exige hoje (`poetry show <pacote>`), não inventado.
     "uvicorn (>=0.31.1,<1.0.0)",
     "starlette (>=0.48.0,<2.0.0)",
     "httpx (>=0.27.1,<1.0.0)",
 ]
 
 [tool.poetry]
-# package-mode = false foi removido: impedia o Poetry de instalar o
-# pacote mcp_server no venv, e isso era a causa raiz de precisar de
-# `sys.path.insert` manual em server.py e nos scripts/ pra achar o
-# módulo dependendo de como cada um era carregado (`-m`, MCP Inspector,
-# script direto). Com o pacote instalado em modo editable, qualquer
-# processo rodando neste venv acha `mcp_server` via site-packages, não
-# importa como o arquivo de entrada foi carregado — a causa raiz some,
-# não só o sintoma.
 packages = [{ include = "mcp_server" }]
 
 [dependency-groups]
@@ -43,13 +28,6 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 filterwarnings = [
-    # Aviso interno do PRÓPRIO pytest-asyncio (não é código deste
-    # projeto) — usa asyncio.get_event_loop_policy() por baixo, que o
-    # Python 3.14+ marcou como obsoleto. Filtrado especificamente por
-    # mensagem + módulo (não um "ignore" genérico de DeprecationWarning)
-    # pra não esconder avisos de verdade que apareçam depois. Remover
-    # este filtro quando uma versão nova do pytest-asyncio corrigir isso
-    # internamente.
     "ignore:'asyncio.get_event_loop_policy' is deprecated:DeprecationWarning:pytest_asyncio",
 ]
 

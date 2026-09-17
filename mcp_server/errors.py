@@ -25,7 +25,7 @@ class DocumentNotFoundError(FrameworkServerError):
 
 class EntryAlreadyExistsError(FrameworkServerError):
     """Já existe um projeto/cliente com esse slug — passe overwrite=True
-    pra sobrescrever de propósito."""
+    pra sobrescrever intencionalmente."""
 
 
 class TemplateNotFoundError(FrameworkServerError):

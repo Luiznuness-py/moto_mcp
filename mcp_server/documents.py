@@ -70,7 +70,7 @@ def read_text(relative_path: str) -> str:
 
 
 def write_text(relative_path: str, content: str, *, create_dirs: bool = True) -> None:
-    """Escrita de propósito geral — sempre passa por ensure_writable.
+    """Escrita intencionalmente geral — sempre passa por ensure_writable.
     Usada para arquivos dentro de WRITABLE_PREFIXES (projects/, clients/,
     profile/)."""
     path = resolve_safe_path(relative_path)

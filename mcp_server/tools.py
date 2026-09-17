@@ -3,7 +3,7 @@
 # Cada tool de escrita aqui delega a proteção de caminho pra
 # documents.write_text()/replace_section(), que sempre passam por
 # paths.ensure_writable(). Isso é garantia estrutural, não checagem
-# espalhada — mesma filosofia usada no gateway do moto_ocr (server/):
+# espalhada.
 # a regra vive num único lugar, não repetida em cada tool.
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ _KIND_TO_DIR = {"projeto": "projects", "cliente": "clients"}
 # projects/clients/profile pode ter colocado ali). Sem essa marcação,
 # nada distingue "isso é dado do repositório" de "isso é instrução do
 # usuário" pro LLM que recebe o retorno da tool — mitigação mínima
-# contra prompt injection via conteúdo de arquivo (ver to-do.md,
+# contra prompt injection via conteúdo de arquivo.
 # "Prompt injection"). Não impede escrita de conteúdo malicioso (isso
 # já é function de WRITABLE_PREFIXES), só marca explicitamente o que
 # volta como dado, nunca instrução a obedecer.
@@ -71,7 +71,7 @@ async def get_capabilities() -> dict:
             "como .git/.venv); escrita só é permitida dentro de "
             f"{', '.join(f'{p}/' for p in settings.WRITABLE_PREFIXES)} — "
             "global/, agents/ e knowledge/ são somente leitura por este "
-            "servidor de propósito (ver docs/mcp_server.md, 'Modelo de "
+            "servidor (ver docs/mcp_server.md, 'Modelo de "
             "segurança'). Além da busca por substring (search_documents), "
             "há busca semântica (search_semantic) sobre o mesmo "
             "repositório inteiro — precisa do Ollama rodando localmente "
@@ -213,7 +213,7 @@ search_web.__doc__ += _UNTRUSTED_WEB_CONTENT_NOTE
 # não passam por paths.ensure_writable()/WRITABLE_PREFIXES (essa
 # restrição é sobre ESCRITA de conteúdo do repo, não sobre dado gerado
 # do índice de busca, que fica fora de qualquer pasta de conteúdo — ver
-# Settings.VECTOR_DB_PATH). Decisão registrada em to-do.md: busca
+# Settings.VECTOR_DB_PATH). Busca
 # semântica convive com search_documents (substring) em vez de
 # substituí-la — cada uma boa pra um tipo de pergunta diferente (exata
 # vs. conceitual/paráfrase).
@@ -280,7 +280,7 @@ async def search_semantic(query: str, top_k: int = 5) -> list[dict]:
     Bill\", \"por que a escrita é restrita\") onde a palavra exata da
     resposta pode não aparecer na pergunta. search_documents continua
     sendo a escolha certa pra achar um termo exato ou nome de arquivo
-    conhecido — as duas convivem de propósito, cada uma boa pra um tipo
+    conhecido — as duas convivem, cada uma adequada pra um tipo
     de busca diferente.
 
     Precisa do Ollama rodando localmente (mesmo pré-requisito de
@@ -386,7 +386,7 @@ async def register_entry(
             exists = False
         if exists:
             raise EntryAlreadyExistsError(
-                f"'{target_path}' já existe. Passe overwrite=True para sobrescrever de propósito."
+                f"'{target_path}' já existe. Passe overwrite=True para sobrescrever."
             )
 
     lines = [f"# {nome}"]

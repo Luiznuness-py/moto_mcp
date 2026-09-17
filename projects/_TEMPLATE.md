@@ -1,25 +1,23 @@
 # [Nome do projeto]
 
-Repositório: `[caminho ou URL do repositório]`.
+Repositório: `[caminho ou URL]`.
 
 ## Papel
 
-O que este projeto faz, em uma ou duas frases.
-
-## Decisões de arquitetura
-
-Decisões registradas, com o porquê — não só o quê.
+Descreva o que o projeto faz.
 
 ## Stack
 
-Confirmado no código real (citar arquivo como evidência) — nunca presumir que outro
-projeto do ecossistema segue igual sem checar.
+Liste tecnologias confirmadas no código ou na configuração.
+
+## Como rodar
+
+Comandos necessários para instalar, executar e validar.
 
 ## Estado atual
 
-O que já está implementado e validado vs. o que falta — com evidência (teste rodado,
-comando executado), não opinião.
+O que está implementado e o que ainda falta validar.
 
-## Pendências conhecidas
+## Pendências
 
-Lista objetiva, com contexto suficiente pra retomar sem precisar redescobrir.
+Lista objetiva de próximos passos.

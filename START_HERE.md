@@ -1,70 +1,33 @@
 # START HERE - Agent Memory
 
-Esta é a fonte central de contexto para Claude, Codex, Gemini, Copilot e qualquer outro
-agente de IA usado neste ecossistema. Este repositório é genérico e reutilizável — não
-contém identidade de empresa, cliente ou pessoa específica. Preencha `global/user_profile.md`,
-`ecosystem/`, `clients/` e `projects/` com o conteúdo real do seu contexto.
+Este repositório é uma base genérica para agentes e um servidor MCP que expõe seus próprios documentos como ferramentas.
 
-## Ordem obrigatória de leitura
+## Ordem de leitura
 
-1. Leia `global/user_profile.md`.
+1. Leia `profile/profile.md`.
 2. Leia `global/workflow.md`.
 3. Leia `global/rules_absolute.md`.
-4. Leia `global/commit_policy.md`.
-5. Leia `ecosystem/` quando a tarefa envolver a empresa, produto, clientes, infraestrutura
-   ou deploy do usuário.
-6. Leia o arquivo em `projects/` quando a tarefa envolver um projeto específico. Isto não
-   é só leitura: ao final de uma sessão que avançou de verdade nesse projeto (decisão
-   tomada, arquitetura mudou, integração nova validada), atualize `projects/<nome>.md`
-   seguindo a mesma estrutura (Repositório/Canonical remote, Memória vigente, Memória
-   obsoleta ou substituída, Apenas discutido ou proposto, Pendências e riscos,
-   Evidências). Registrar o trabalho só no `to-do.md`/changelog do próprio repositório do
-   projeto não é suficiente — a fonte central fica defasada se ninguém escrever de volta
-   aqui.
-7. Leia `knowledge/security/security_testing_baseline.md` quando a tarefa envolver
-   segurança, testes adversariais, validação, pentest ou deploy seguro.
-8. Leia o arquivo em `clients/` quando a tarefa envolver um cliente específico.
-9. Leia `agents/<nome>.md` somente quando a tarefa chamar uma especialidade/persona.
-10. Leia `knowledge/<tema>/` quando a tarefa exigir base conceitual ou técnica.
+4. Leia `ecosystem/` quando a tarefa envolver infraestrutura, produto, deploy ou integração.
+5. Leia o arquivo em `projects/` quando a tarefa envolver um projeto específico.
+6. Leia `knowledge/security/security_testing_baseline.md` quando a tarefa envolver segurança, validação, pentest ou deploy seguro.
+7. Leia o arquivo em `clients/` quando a tarefa envolver um cliente específico.
+8. Leia `agents/<nome>.md` somente quando a tarefa chamar uma especialidade.
+9. Leia `knowledge/<tema>/` quando a tarefa exigir base técnica.
 
-## Regra de manutenção: todo projeto/cliente novo ganha um arquivo
+## Manutenção de contexto
 
-Sempre que o usuário introduzir um projeto novo ou um cliente novo:
+- Projeto novo deve ter arquivo em `projects/<nome>.md`, usando `projects/_TEMPLATE.md`.
+- Cliente novo deve ter arquivo em `clients/<nome>.md`, usando `clients/_TEMPLATE.md`.
+- Atualize `INDEX.md` ou `clients/_index.md` quando criar entradas novas.
+- Não misture contexto de projetos ou clientes diferentes no mesmo arquivo.
+- Não registre secrets, tokens, chaves, `.env` real, credenciais ou senhas.
 
-1. Criar um arquivo próprio em `projects/<nome>.md` ou `clients/<nome>.md`, usando
-   `projects/_TEMPLATE.md` ou `clients/_TEMPLATE.md` como ponto de partida.
-2. Registrar no índice correspondente (`clients/_index.md` para clientes; para projetos,
-   listar em `INDEX.md`).
-3. Não misturar contexto de projetos/clientes diferentes no mesmo arquivo.
-4. Não presumir ou inventar contexto — se a informação não foi dada, deixar como
-   pendência explícita no próprio arquivo.
-
-## Regras absolutas
+## Regras gerais
 
 - Responder curto, direto e com conclusão primeiro.
 - Não declarar pronto, seguro, testado ou aprovado sem evidência real.
-- Não concordar por reflexo; discordar quando houver risco técnico, segurança, escala,
-  rastreabilidade ou qualidade.
-- Quando o usuário disser "anote", apenas registrar; não alterar código.
-- Antes de alterar repo, ler o código e respeitar padrão local.
-- Regra de negócio fica no backend/service, não sob responsabilidade do front.
-- Sem gambiarra, sem jeitinho, sem reaproveitar campo com outro significado.
-- Trabalho de verdade num projeto termina com `projects/<nome>.md` atualizado, não só com
-  o changelog do repositório individual do projeto.
-- Commit local somente quando solicitado ou quando o fluxo já autorizou; push somente
-  com pedido explícito.
-- Política de atribuição em commit é definida pelo usuário em `global/commit_policy.md`
-  — não presumir uma regra de marca específica sem o usuário definir.
-
-## Regra de segurança
-
-Não salvar secrets, tokens, chaves, `.env` real, credenciais, senhas ou dados sensíveis
-nesta memória.
-
-## Leitura complementar consolidada
-
-- Para colaboração e estilo fino de trabalho, leia `global/user_profile.md` e
-  `global/workflow.md`.
-- Para política de commit, leia `global/commit_policy.md`.
-- Para revisão técnica, leia `agents/mike.md` e `agents/mike_review.md`.
-- Para segurança/testes transversais, leia `knowledge/security/security_testing_baseline.md`.
+- Discordar quando houver risco técnico, segurança, escala, rastreabilidade ou qualidade.
+- Antes de alterar código, ler o padrão local.
+- Regra de negócio fica no backend/service.
+- Sem gambiarra, sem reaproveitar campo com outro significado.
+- Commit local e push dependem das regras do repositório e da autorização do usuário.

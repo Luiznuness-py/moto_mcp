@@ -284,7 +284,7 @@ def test_default_scan_reaches_previously_excluded_folders(fake_repo):
 
 def test_root_level_loose_file_gets_root_category(fake_repo):
     # Arquivos soltos na raiz do repo (AGENTS.md, CLAUDE.md, README.md,
-    # to-do.md...) não têm "/" no path — não há um primeiro segmento
+    # README.md etc.) não têm "/" no path — não há um primeiro segmento
     # que sirva de categoria, então usam ROOT_CATEGORY.
     (fake_repo / "AGENTS.md").write_text("## Ponte\nInstruções pra este agente.\n", encoding="utf-8")
     store = _FakeVectorStore()

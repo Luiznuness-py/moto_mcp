@@ -3,7 +3,7 @@
 #
 # Pergunta manual contra o índice vetorial de verdade — pra explorar/
 # calibrar a busca na mão, sem precisar abrir um REPL Python (que era
-# como isso era testado antes — ver to-do.md). Uso (da raiz do
+# Uso (da raiz do repositório):
 # repositório, ou de qualquer lugar):
 #
 #   poetry run python scripts/ask.py "por que a escrita é restrita?"

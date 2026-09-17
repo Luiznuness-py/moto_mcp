@@ -1,25 +1,12 @@
-# docker-compose.yml
+# SearXNG usado pela tool search_web.
 #
-# SearXNG standalone, só pro moto_mcp (mcp_server/websearch.py) — não é
-# o mesmo container do projeto n8n do usuário, de propósito: o moto_mcp
-# deve continuar se bastando sozinho (qualquer um clona e usa), sem
-# depender de outro projeto estar de pé. Imagem/versão iguais às que já
-# rodam validadas no ecossistema (mesma referência usada no n8n).
-#
-# Setup (uma vez, antes do primeiro `podman compose up`):
-#   cp searxng/settings.yml.example searxng/settings.yml
-#   (editar o secret_key gerado ali dentro antes de subir)
-#
-# Uso (Podman, não Docker puro — padrão do ecossistema, ver
-# global/workflow.md/global/yuri_profile.md):
-#   podman machine start   # se a VM ainda não estiver ligada
+# Setup:
+#   copy searxng\settings.yml.example searxng\settings.yml
+#   podman machine start
 #   podman compose -p moto-mcp -f docker-compose.yml up -d searxng
-#   podman compose -p moto-mcp -f docker-compose.yml down
 #
-# Nome do arquivo continua "docker-compose.yml" de propósito — é só o
-# formato do compose (compatível), não implica rodar via Docker; mesma
-# convenção já usada em moto_ocr/moto_rules (docker-compose.*.yml
-# rodados com podman-compose/podman compose).
+# Parar:
+#   podman compose -p moto-mcp -f docker-compose.yml down
 
 name: moto-mcp
 
