@@ -31,25 +31,100 @@ Transportes disponíveis:
 
 Veja `docs/mcp_server.md`.
 
-## Instalação rápida
+## Comandos rápidos
+
+### Instalar dependências
 
 ```powershell
 poetry install
 ollama pull bge-m3
 copy .env.example .env
+```
+
+Edite o `.env` antes de subir o servidor. Em modo `lan`, configure `MOTO_MCP_AUTH_TOKEN`.
+
+Guia completo: [docs/guia_instalacao_busca.md](docs/guia_instalacao_busca.md).
+
+### Subir SearXNG
+
+Primeira vez:
+
+```powershell
+copy searxng\settings.yml.example searxng\settings.yml
+python -c "import secrets; print(secrets.token_hex(32))"
+notepad searxng\settings.yml
+```
+
+No `searxng/settings.yml`, troque `server.secret_key: "ultrasecretkey"` pelo valor gerado. Mantenha `search.formats` com `json`.
+
+Subir:
+
+```powershell
+podman machine start
+podman compose -p moto-mcp -f docker-compose.yml up -d searxng
+```
+
+Testar:
+
+```powershell
+Invoke-RestMethod "http://127.0.0.1:8080/search?q=teste&format=json"
+```
+
+Detalhes: [docs/mcp_server.md](docs/mcp_server.md#searxng-para-search_web).
+
+### Subir o MCP
+
+Local, na mesma máquina do cliente MCP:
+
+```powershell
+poetry run python -m mcp_server.server
+```
+
+Rede, para outro computador acessar:
+
+```powershell
 poetry run python -m mcp_server.server_network
 ```
 
-Guia completo: `docs/guia_instalacao_busca.md`.
+Detalhes: [docs/mcp_server.md](docs/mcp_server.md).
 
-## OpenCode
+### Rodar OpenCode local
 
-Para OpenCode local ou remoto, veja:
+```powershell
+npm install -g opencode-ai@1.18.31
+$env:MOTO_MCP_OPENCODE_OLLAMA_BASE_URL = "http://127.0.0.1:11434/v1"
+opencode --model ollama/qwen3:14b
+```
 
-- `docs/guia_opencode.md`
-- `docs/diagnostico_opencode_remoto.md`
-- `opencode/opencode.remote.example.json`
-- `opencode/AGENTS.md`
+Guia completo: [docs/guia_opencode.md](docs/guia_opencode.md).
+
+### Rodar OpenCode pela pasta do projeto
+
+A pasta [opencode/](opencode/) já traz a configuração do OpenCode para usar MCP e Ollama remotos.
+
+Crie o arquivo local do Bearer token:
+
+```powershell
+cd opencode
+notepad .motomcp-token
+```
+
+Cole somente o token no arquivo, sem `Bearer` e sem aspas. Esse arquivo é ignorado pelo Git.
+
+Rodar:
+
+```powershell
+opencode --model ollama/qwen3:14b
+```
+
+Validar:
+
+```powershell
+opencode mcp list
+opencode run --model ollama/qwen3:14b --format json 'Use a tool motomcp_get_capabilities agora. Não explique. Apenas execute a tool.'
+```
+
+Configuração usada: [opencode/opencode.json](opencode/opencode.json). Guia remoto: [docs/diagnostico_opencode_remoto.md](docs/diagnostico_opencode_remoto.md).
 
 ## Segurança
 
