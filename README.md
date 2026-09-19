@@ -34,11 +34,58 @@ Veja `docs/mcp_server.md`.
 ## Comandos rápidos
 
 ### Instalar dependências
+## Comandos rápidos
+
+### Instalar dependências
 
 ```powershell
 poetry install
 ollama pull bge-m3
 copy .env.example .env
+```
+
+Edite o `.env` antes de subir o servidor. Em modo `lan`, configure `MOTO_MCP_AUTH_TOKEN`.
+
+Guia completo: [docs/guia_instalacao_busca.md](docs/guia_instalacao_busca.md).
+
+### Subir SearXNG
+
+Primeira vez:
+
+```powershell
+copy searxng\settings.yml.example searxng\settings.yml
+python -c "import secrets; print(secrets.token_hex(32))"
+notepad searxng\settings.yml
+```
+
+No `searxng/settings.yml`, troque `server.secret_key: "ultrasecretkey"` pelo valor gerado. Mantenha `search.formats` com `json`.
+
+Subir:
+
+```powershell
+podman machine start
+podman compose -p moto-mcp -f docker-compose.yml up -d searxng
+```
+
+Testar:
+
+```powershell
+Invoke-RestMethod "http://127.0.0.1:8080/search?q=teste&format=json"
+```
+
+Detalhes: [docs/mcp_server.md](docs/mcp_server.md#searxng-para-search_web).
+
+### Subir o MCP
+
+Local, na mesma máquina do cliente MCP:
+
+```powershell
+poetry run python -m mcp_server.server
+```
+
+Rede, para outro computador acessar:
+
+```powershell
 ```
 
 Edite o `.env` antes de subir o servidor. Em modo `lan`, configure `MOTO_MCP_AUTH_TOKEN`.
