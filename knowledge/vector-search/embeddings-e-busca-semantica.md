@@ -45,7 +45,7 @@ A busca usa similaridade de cosseno. O score deve ser comparado de forma relativ
 
 ## Índice
 
-O LanceDB guarda os vetores em `.vector_index/`.
+O LanceDB é o backend preferencial, executado em processo auxiliar. Um espelho durável fica em `.vector_index/vectors.sqlite3`. Se o LanceDB falhar, o SQLite assume a busca exata por cosseno em Python, sem encerrar o MCP. Consulte `docs/fallback_lancedb_sqlite.md`.
 
 Reindexar:
 

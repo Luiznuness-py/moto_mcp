@@ -25,13 +25,13 @@ from __future__ import annotations
 import sys
 
 from mcp_server.embeddings import OllamaEmbeddingProvider
-from mcp_server.vectorstore import LanceDBVectorStore
+from mcp_server.vectorstore import get_vector_store, VectorStore
 
 TOP_K = 5
 PREVIEW_CHARS = 160
 
 
-def ask(store: LanceDBVectorStore, embedder: OllamaEmbeddingProvider, question: str) -> None:
+def ask(store: VectorStore, embedder: OllamaEmbeddingProvider, question: str) -> None:
     vector = embedder.embed(question)
     results = store.search(vector, top_k=TOP_K)
 
@@ -48,7 +48,7 @@ def ask(store: LanceDBVectorStore, embedder: OllamaEmbeddingProvider, question: 
 
 
 def main() -> None:
-    store = LanceDBVectorStore()
+    store = get_vector_store()
     embedder = OllamaEmbeddingProvider()
 
     args_question = " ".join(sys.argv[1:]).strip()

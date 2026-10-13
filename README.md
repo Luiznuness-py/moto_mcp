@@ -20,7 +20,7 @@ O pacote `mcp_server/` expõe tools MCP para:
 - listar documentos;
 - ler documentos;
 - fazer busca textual;
-- fazer busca semântica com `bge-m3` + LanceDB;
+- fazer busca semântica com `bge-m3` + LanceDB, com fallback automático para SQLite;
 - fazer busca web via SearXNG local;
 - criar e editar entradas permitidas em `projects/`, `clients/` e `profile/`.
 

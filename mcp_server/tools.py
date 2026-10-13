@@ -207,7 +207,7 @@ search_web.__doc__ += _UNTRUSTED_WEB_CONTENT_NOTE
 
 # --- Busca vetorial (semântica) ---------------------------------------
 #
-# As três tools abaixo tocam o ÍNDICE vetorial (LanceDB + embeddings
+# As três tools abaixo tocam o ÍNDICE vetorial (LanceDB/SQLite + embeddings
 # bge-m3 via Ollama, em mcp_server/vectorstore.py e
 # mcp_server/embeddings.py), não os arquivos do repositório — por isso
 # não passam por paths.ensure_writable()/WRITABLE_PREFIXES (essa
@@ -219,8 +219,8 @@ search_web.__doc__ += _UNTRUSTED_WEB_CONTENT_NOTE
 # vs. conceitual/paráfrase).
 #
 # `_vector_store()`/`_embedding_provider()` instanciam os adaptadores
-# REAIS (LanceDB/Ollama) sob demanda, nunca guardados como estado global
-# do servidor — mesmo padrão de scripts/reindex.py e scripts/ask.py.
+# REAIS sob demanda. O banco compartilha um processo auxiliar LanceDB e
+# um espelho SQLite entre as ferramentas e a indexação de startup.
 # Cada tool delega a lógica de verdade pra uma função `_..._impl()`
 # testável com fakes (tests/test_search_tools.py) — a tool async em si
 # fica fininha só pra não vazar parâmetro de injeção de dependência no
@@ -228,9 +228,9 @@ search_web.__doc__ += _UNTRUSTED_WEB_CONTENT_NOTE
 
 
 def _vector_store() -> VectorStore:
-    from mcp_server.vectorstore import LanceDBVectorStore
+    from mcp_server.vectorstore import get_vector_store
 
-    return LanceDBVectorStore()
+    return get_vector_store()
 
 
 def _embedding_provider() -> EmbeddingProvider:
@@ -274,7 +274,7 @@ def _compact_impl(store: VectorStore, older_than_days: int | None) -> dict:
 async def search_semantic(query: str, top_k: int = 5) -> list[dict]:
     """
     Busca por SENTIDO no índice vetorial (embeddings bge-m3 via Ollama,
-    LanceDB) — cobre o repositório inteiro, igual ao escopo de
+    LanceDB ou SQLite) — cobre o repositório inteiro, igual ao escopo de
     search_documents, mas por similaridade de significado em vez de
     substring exata. Boa pra pergunta conceitual/paráfrase (\"quem é o
     Bill\", \"por que a escrita é restrita\") onde a palavra exata da
@@ -313,15 +313,10 @@ async def reindex_search() -> dict:
 
 
 async def compact_search_index(older_than_days: int | None = None) -> dict:
-    """
-    Manutenção do índice vetorial — compacta fragmentos pequenos do
-    LanceDB e limpa histórico de versões antigas; não muda nenhum dado
-    atual, só a organização física em disco. Não precisa do Ollama (só
-    toca o LanceDB). Seguro de chamar a qualquer momento; não é preciso
-    depois de todo reindex_search, só ocasionalmente (ex: depois de
-    muitas reindexações incrementais pequenas em sequência).
-    `older_than_days=None` usa o padrão do LanceDB (retém 7 dias de
-    histórico de versões antigas).
+    """Compacta LanceDB e o espelho SQLite sem alterar os chunks atuais.
+
+    Não precisa do Ollama. older_than_days seleciona histórico somente
+    no LanceDB; o SQLite executa VACUUM e não mantém versões por idade.
     """
     return _compact_impl(_vector_store(), older_than_days)
 

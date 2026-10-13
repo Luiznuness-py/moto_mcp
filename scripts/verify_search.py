@@ -2,7 +2,7 @@
 # scripts/verify_search.py
 #
 # Roda o conjunto fixo de perguntas de mcp_server/verification_questions.py
-# contra o índice vetorial de verdade (LanceDB) e confirma que o chunk
+# contra o índice vetorial de verdade (LanceDB com fallback SQLite) e confirma que o chunk
 # esperado aparece entre os top-K resultados de cada pergunta — ver
 # "Verificação obrigatória" em
 # knowledge/vector-search/embeddings-e-busca-semantica.md. Uso (da raiz
@@ -30,14 +30,14 @@ from __future__ import annotations
 import sys
 
 from mcp_server.embeddings import OllamaEmbeddingProvider
-from mcp_server.vectorstore import LanceDBVectorStore
+from mcp_server.vectorstore import get_vector_store
 from mcp_server.verification_questions import VERIFICATION_QUESTIONS
 
 TOP_K = 8
 
 
 def main() -> None:
-    store = LanceDBVectorStore()
+    store = get_vector_store()
     embedder = OllamaEmbeddingProvider()
 
     indexed = store.list_indexed()

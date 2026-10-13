@@ -33,7 +33,7 @@ from mcp_server.network import ensure_safe_bind_host
 from mcp_server.server import mcp
 
 if __name__ == "__main__":
-    from mcp_server.startup import reindex_on_startup
+    from mcp_server.startup import start_reindex_on_startup
 
     # Mensagem limpa em vez de stack trace do Python — quem roda isso
     # pela primeira vez (público que este servidor mira: pouco
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         print(f"[moto_mcp] Não foi possível subir o servidor de rede: {exc}", file=sys.stderr)
         sys.exit(1)
 
-    reindex_on_startup()
+    start_reindex_on_startup()
 
     app = mcp.streamable_http_app()
     if settings.AUTH_TOKEN:

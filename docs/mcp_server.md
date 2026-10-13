@@ -10,7 +10,7 @@ O `moto_mcp` expõe documentos do próprio repositório como tools MCP. O pacote
 - `search_documents(query, subpath="", case_sensitive=false, max_results=50)` — busca textual.
 - `list_agents()` — lista agentes definidos em `agents/`.
 - `search_web(query, max_results=10, page=1)` — busca web via SearXNG local.
-- `search_semantic(query, top_k=5)` — busca semântica via embeddings `bge-m3` e LanceDB.
+- `search_semantic(query, top_k=5)` — busca semântica via embeddings `bge-m3` e LanceDB, com fallback automático para SQLite.
 - `reindex_search()` — atualiza o índice semântico.
 - `compact_search_index(older_than_days=null)` — compacta o índice vetorial.
 - `get_template(kind)` — lê template de projeto ou cliente.
@@ -149,3 +149,5 @@ Verificar perguntas conhecidas:
 ```powershell
 poetry run python scripts/verify_search.py
 ```
+
+A atualização automática do índice semântico roda em segundo plano para não bloquear a conexão MCP em CPUs lentas. Durante a primeira indexação, `search_semantic` pode retornar resultados parciais. Os embeddings são salvos em lotes de até oito chunks; após uma interrupção, a próxima execução reaproveita o conteúdo já indexado. Falhas continuam registradas em stderr.

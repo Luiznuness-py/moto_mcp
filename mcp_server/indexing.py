@@ -13,9 +13,9 @@
 #
 # `reindex()` recebe `store`/`embedder` já prontos (injeção de
 # dependência, mesmo padrão de mcp_server/vectorstore.py e
-# mcp_server/embeddings.py) — não instancia LanceDBVectorStore nem
+# mcp_server/embeddings.py) — não instancia SQLiteVectorStore nem
 # OllamaEmbeddingProvider aqui dentro. Isso mantém este módulo testável
-# com fakes, sem precisar do pacote `lancedb` nem de um Ollama rodando
+# com fakes, sem precisar do banco real nem de um Ollama rodando
 # (ver tests/test_indexing.py). Quem monta as instâncias de verdade é o
 # script de linha de comando (scripts/reindex.py).
 
@@ -28,7 +28,7 @@ from datetime import datetime, timezone
 from mcp_server import documents
 from mcp_server.config import settings
 from mcp_server.embeddings import EmbeddingProvider
-from mcp_server.errors import DocumentNotFoundError
+from mcp_server.errors import DocumentNotFoundError, EmbeddingProviderError
 from mcp_server.vectorstore import VectorStore
 
 # Raízes escaneadas por padrão: "" = a raiz do repositório inteira,
@@ -56,6 +56,9 @@ DEFAULT_ROOTS: tuple[str, ...] = ("",)
 # não têm "/" (não vêm de dentro de nenhuma pasta), então não há um
 # primeiro segmento de path que sirva de categoria.
 ROOT_CATEGORY = "(raiz)"
+
+# Salvar lotes pequenos permite retomar após uma interrupção na inferência.
+EMBEDDING_BATCH_SIZE = 8
 
 
 @dataclass
@@ -156,7 +159,7 @@ def reindex(
     - chunk igual (mesmo `content_hash`) -> não faz nada, nem chama o
       embedder — é o passo caro que este algoritmo existe pra evitar.
 
-    Os embeddings são gerados em lote (`embed_batch`), não um por um —
+    Os embeddings são gerados e persistidos em lotes pequenos (`embed_batch`) —
     ver docstring de `EmbeddingProvider.embed_batch`.
     """
     report = IndexingReport()
@@ -170,12 +173,15 @@ def reindex(
     ]
     report.unchanged = len(current) - len(to_embed_ids)
 
-    if to_embed_ids:
-        bodies = [current[chunk_id]["body"] for chunk_id in to_embed_ids]
+    for offset in range(0, len(to_embed_ids), EMBEDDING_BATCH_SIZE):
+        batch_ids = to_embed_ids[offset:offset + EMBEDDING_BATCH_SIZE]
+        bodies = [current[chunk_id]["body"] for chunk_id in batch_ids]
         vectors = embedder.embed_batch(bodies)
+        if len(vectors) != len(batch_ids):
+            raise EmbeddingProviderError("Quantidade de embeddings diferente do lote enviado.")
         indexed_at = datetime.now(timezone.utc).isoformat()
 
-        for chunk_id, vector in zip(to_embed_ids, vectors):
+        for chunk_id, vector in zip(batch_ids, vectors, strict=True):
             chunk = current[chunk_id]
             metadata = {
                 "path": chunk["path"],

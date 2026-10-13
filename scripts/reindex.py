@@ -9,8 +9,8 @@
 # Idempotente por natureza (ver mcp_server/indexing.py): rodar de novo
 # sem nada ter mudado não reprocessa nenhum chunk, só confirma que
 # content_hash bate. Precisa do Ollama rodando localmente (modelo
-# `bge-m3` já baixado — `ollama pull bge-m3`) e do pacote `lancedb`
-# instalado (ver knowledge/vector-search/dependencias.md).
+# `bge-m3` já baixado — `ollama pull bge-m3`); SQLite já acompanha o Python
+# (ver knowledge/vector-search/dependencias.md).
 #
 # mcp_server é instalado no venv em modo editable (ver [tool.poetry]
 # packages em pyproject.toml) — por isso `from mcp_server import ...`
@@ -21,11 +21,11 @@ from __future__ import annotations
 
 from mcp_server.embeddings import OllamaEmbeddingProvider
 from mcp_server.indexing import reindex
-from mcp_server.vectorstore import LanceDBVectorStore
+from mcp_server.vectorstore import get_vector_store
 
 
 def main() -> None:
-    store = LanceDBVectorStore()
+    store = get_vector_store()
     embedder = OllamaEmbeddingProvider()
 
     report = reindex(store, embedder)

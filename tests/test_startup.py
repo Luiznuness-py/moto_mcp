@@ -51,24 +51,24 @@ class _FakeVectorStore:
 
 class _FailingVectorStore(_FakeVectorStore):
     def upsert(self, chunk_id, vector, text, metadata):
-        raise VectorStoreError("LanceDB indisponível (fake)")
+        raise VectorStoreError("SQLite indisponível (fake)")
 
 
 class TestReindexOnStartup:
     def test_succeeds_with_working_store_and_embedder(self, fake_repo, capsys):
         reindex_on_startup(store=_FakeVectorStore(), embedder=_FakeEmbeddingProvider())
-        out = capsys.readouterr().out
+        out = capsys.readouterr().err
         assert "[moto_mcp]" in out
         assert "Aviso" not in out
 
     def test_embedding_failure_does_not_raise(self, fake_repo, capsys):
         reindex_on_startup(store=_FakeVectorStore(), embedder=_FailingEmbeddingProvider())
-        out = capsys.readouterr().out
+        out = capsys.readouterr().err
         assert "Aviso" in out
 
     def test_vectorstore_failure_does_not_raise(self, fake_repo, capsys):
         reindex_on_startup(store=_FailingVectorStore(), embedder=_FakeEmbeddingProvider())
-        out = capsys.readouterr().out
+        out = capsys.readouterr().err
         assert "Aviso" in out
 
     def test_no_unexpected_exception_propagates(self, fake_repo):
@@ -80,3 +80,25 @@ class TestReindexOnStartup:
             reindex_on_startup(store=_FailingVectorStore(), embedder=_FailingEmbeddingProvider())
         except (EmbeddingProviderError, VectorStoreError):
             pytest.fail("reindex_on_startup não deveria propagar exceção")
+
+
+def test_startup_returns_while_indexing_is_still_running(monkeypatch):
+    from threading import Event
+    from mcp_server import startup
+
+    started, release = Event(), Event()
+
+    def slow_index():
+        started.set()
+        assert release.wait(timeout=5)
+
+    monkeypatch.setattr(startup, "reindex_on_startup", slow_index)
+    worker = startup.start_reindex_on_startup()
+    try:
+        assert started.wait(timeout=1)
+        assert worker.is_alive()
+        assert worker.daemon
+    finally:
+        release.set()
+        worker.join(timeout=1)
+    assert not worker.is_alive()

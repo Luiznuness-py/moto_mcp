@@ -7,7 +7,8 @@
 VERIFICATION_QUESTIONS: list[dict[str, str]] = [
     {
         "question": "Quais são as regras gerais que o agente deve seguir?",
-        "expected_chunk_id": "START_HERE.md#Regras gerais",
+        # Fonte normativa obrigatória indicada pela ordem de leitura do bootstrap.
+        "expected_chunk_id": "global/rules_absolute.md#",
     },
     {
         "question": "Quais tools o servidor MCP oferece para leitura e busca?",

@@ -40,7 +40,7 @@ mcp.tool()(tools.append_to_section)
 
 
 if __name__ == "__main__":
-    from mcp_server.startup import reindex_on_startup
+    from mcp_server.startup import start_reindex_on_startup
 
-    reindex_on_startup()
+    start_reindex_on_startup()
     mcp.run()

@@ -130,7 +130,7 @@ def test_compact_impl_delegates_older_than_days_and_confirms():
     assert out == {"status": "ok", "older_than_days": 30}
 
 
-def test_compact_impl_default_none_uses_lancedb_default():
+def test_compact_impl_passes_none_to_store():
     store = _FakeVectorStore()
 
     out = _compact_impl(store, None)

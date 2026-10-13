@@ -75,7 +75,7 @@ class Settings(BaseSettings):
     # Pastas nunca listadas/lidas, mesmo que tecnicamente dentro do
     # repo (controle de versão, caches, ambientes virtuais). ".vector_index"
     # entrou junto com o VECTOR_DB_PATH abaixo — é dado gerado (arquivos
-    # binários do LanceDB), não conteúdo pra listar/ler/buscar como os
+    # arquivos do LanceDB/SQLite), não conteúdo pra listar/ler/buscar como os
     # outros .md/.txt do repositório.
     IGNORED_DIR_NAMES: list[str] = Field(
         default=[".git", "__pycache__", ".venv", "venv", "node_modules", ".pytest_cache", ".vector_index"]
@@ -101,15 +101,15 @@ class Settings(BaseSettings):
     # padrão, em vez de herdar essa variável de ambiente.
     OLLAMA_HOST: str = Field(default="http://127.0.0.1:11434")
 
-    # Dimensão do vetor de embedding — 1024 pro bge-m3. O LanceDB fixa
-    # isso no schema da tabela no momento da criação (ver
+    # Dimensão do vetor de embedding — 1024 pro bge-m3. O adaptador fixa
+    # isso na configuração persistida no momento da criação (ver
     # mcp_server/vectorstore.py); se trocar de modelo de embedding, essa
-    # dimensão também precisa mudar, e a tabela precisa ser recriada do
+    # dimensão também precisa mudar, e o índice precisa ser recriado do
     # zero (reindexação completa — ver knowledge/vector-search/, "mesmo
     # modelo, não só mesma dimensão").
     EMBEDDING_DIMENSIONS: int = Field(default=1024)
 
-    # Onde o LanceDB guarda os arquivos do índice vetorial. Fica fora de
+    # Onde LanceDB e o espelho SQLite guardam o índice vetorial. Fica fora de
     # todas as pastas de conteúdo (não é projects/, clients/, knowledge/
     # etc.) e é dado gerado, não fonte — por isso está em
     # IGNORED_DIR_NAMES acima e deveria estar no .gitignore.

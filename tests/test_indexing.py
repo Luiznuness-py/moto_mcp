@@ -2,12 +2,12 @@
 #
 # Testa mcp_server.indexing.reindex() com fakes de embedder e de banco
 # vetorial — mesmo espírito de tests/test_embeddings.py (cliente Ollama
-# falso): aqui não é o LanceDB nem o Ollama que estão sob teste (isso já
+# falso): aqui não é o SQLite nem o Ollama que estão sob teste (isso já
 # é coberto por tests/test_vectorstore.py e tests/test_embeddings.py),
 # é a ORQUESTRAÇÃO (o que reindex() decide upsertar/deletar/pular). Por
 # isso um FakeVectorStore em memória é suficiente e correto aqui, mesmo
 # test_vectorstore.py explicitamente não usando fake pra o adaptador
-# real do LanceDB — camadas diferentes, filosofias de teste diferentes.
+# real do SQLite — camadas diferentes, filosofias de teste diferentes.
 #
 # Usa o fixture `fake_repo` (tests/conftest.py), acrescentando
 # knowledge/ diretamente em cada teste (fake_repo não inclui essa pasta
@@ -297,7 +297,7 @@ def test_root_level_loose_file_gets_root_category(fake_repo):
 
 
 def test_default_scan_does_not_touch_its_own_vector_index_folder(fake_repo):
-    # .vector_index/ (onde o LanceDB guarda os dados binários do próprio
+    # .vector_index/ (onde o SQLite guarda os dados binários do próprio
     # índice) está em IGNORED_DIR_NAMES — o scan da raiz inteira não pode
     # tentar ler os arquivos internos do banco como se fossem conteúdo.
     (fake_repo / ".vector_index").mkdir()
@@ -308,3 +308,47 @@ def test_default_scan_does_not_touch_its_own_vector_index_folder(fake_repo):
     report = reindex(store, embedder)
 
     assert not any(chunk_id.startswith(".vector_index") for chunk_id in report.upserted)
+
+
+def test_interrupted_batch_resumes_without_reembedding_saved_chunks(fake_repo):
+    import pytest
+    from mcp_server.indexing import EMBEDDING_BATCH_SIZE
+    from mcp_server.errors import EmbeddingProviderError
+
+    count = EMBEDDING_BATCH_SIZE + 1
+    _write_knowledge_file(fake_repo, "knowledge/lotes.md", "".join(
+        f"## Parte {i}\nTexto {i}.\n" for i in range(count)
+    ))
+    store = _FakeVectorStore()
+
+    class InterruptedProvider(_FakeEmbeddingProvider):
+        def embed_batch(self, texts):
+            if self.calls:
+                raise EmbeddingProviderError("interrupção")
+            return super().embed_batch(texts)
+
+    with pytest.raises(EmbeddingProviderError, match="interrupção"):
+        reindex(store, InterruptedProvider(), categories=("knowledge",))
+    assert len(store.list_indexed()) == EMBEDDING_BATCH_SIZE
+    embedder = _FakeEmbeddingProvider()
+    report = reindex(store, embedder, categories=("knowledge",))
+    assert report.unchanged == EMBEDDING_BATCH_SIZE
+    assert len(report.upserted) == 1
+    assert [len(batch) for batch in embedder.calls] == [1]
+    assert report.total_current == count
+
+
+def test_incomplete_embedding_batch_does_not_silently_drop_chunks(fake_repo):
+    import pytest
+    from mcp_server.errors import EmbeddingProviderError
+
+    _write_knowledge_file(fake_repo, "knowledge/lotes.md", "## A\nTexto A.\n## B\nTexto B.\n")
+    store = _FakeVectorStore()
+
+    class IncompleteProvider(_FakeEmbeddingProvider):
+        def embed_batch(self, texts):
+            return super().embed_batch(texts)[:1]
+
+    with pytest.raises(EmbeddingProviderError, match="Quantidade"):
+        reindex(store, IncompleteProvider(), categories=("knowledge",))
+    assert store.list_indexed() == {}
